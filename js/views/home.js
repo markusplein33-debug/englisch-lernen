@@ -33,7 +33,50 @@ Views.home = function (el) {
     '<div class="tile" data-go="#/statistik"><span class="big">📊</span>Statistik<small>Dein Fortschritt</small></div>' +
     '</div>';
 
+  var stand = (window.APP_INFO && APP_INFO.stand) || '';
+  var standDe = stand ? stand.split('-').reverse().join('.') : '?';
+  html += '<div class="center" style="margin-top:22px">' +
+    '<p class="note">Letzte Aktualisierung: ' + standDe +
+    ' · Version ' + ((window.APP_INFO && APP_INFO.version) || '?') + '</p>' +
+    '<button class="btn ghost" id="refresh">🔄 Nach Update suchen</button>' +
+    '<p class="note" id="refresh-status" style="margin-top:8px"></p></div>';
+
   el.innerHTML = html;
+  var refreshBtn = el.querySelector('#refresh');
+  refreshBtn.addEventListener('click', function () {
+    var status = el.querySelector('#refresh-status');
+    if (!navigator.onLine) { status.textContent = 'Dafür brauchst du kurz Internet.'; return; }
+    if (!('serviceWorker' in navigator)) { location.reload(); return; }
+    status.textContent = 'Suche nach Update …';
+    navigator.serviceWorker.getRegistration().then(function (reg) {
+      if (!reg) { location.reload(); return; }
+      function aktiviereWartenden() {
+        if (reg.waiting) {
+          navigator.serviceWorker.addEventListener('controllerchange', function () {
+            location.reload();
+          });
+          reg.waiting.postMessage({ typ: 'skipWaiting' });
+          status.textContent = 'Update wird installiert …';
+          return true;
+        }
+        return false;
+      }
+      if (aktiviereWartenden()) return;
+      reg.update().then(function () {
+        if (aktiviereWartenden()) return;
+        if (reg.installing) {
+          status.textContent = 'Update gefunden, lädt …';
+          reg.installing.addEventListener('statechange', function () {
+            aktiviereWartenden();
+          });
+        } else {
+          status.textContent = '✅ Die App ist auf dem neuesten Stand.';
+        }
+      }).catch(function () {
+        status.textContent = 'Update-Suche fehlgeschlagen – bist du online?';
+      });
+    });
+  });
   el.querySelectorAll('[data-go]').forEach(function (t) {
     t.addEventListener('click', function () { location.hash = t.getAttribute('data-go'); });
   });

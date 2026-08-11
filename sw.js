@@ -1,6 +1,6 @@
 // Service Worker: Precache aller App-Dateien, cache-first, offline-fähig.
 // Bei jeder Änderung an der App die VERSION erhöhen!
-var VERSION = 2;
+var VERSION = 3;
 var CACHE = 'notizen-en-v' + VERSION;
 
 var ASSETS = [
@@ -12,6 +12,7 @@ var ASSETS = [
   'js/router.js',
   'js/storage.js',
   'js/grading.js',
+  'js/version.js',
   'js/speech.js',
   'js/srs.js',
   'js/quiz.js',
@@ -54,6 +55,10 @@ self.addEventListener('activate', function (e) {
       }));
     }).then(function () { return self.clients.claim(); })
   );
+});
+
+self.addEventListener('message', function (e) {
+  if (e.data && e.data.typ === 'skipWaiting') self.skipWaiting();
 });
 
 self.addEventListener('fetch', function (e) {

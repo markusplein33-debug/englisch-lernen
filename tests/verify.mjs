@@ -80,6 +80,20 @@ for (const [inp, ziel, erwartet] of cases) {
   const passt = erwartet === 'richtig-oder-sinn' ? (r === 'richtig' || r === 'sinn' || r === 'schreib') : r === erwartet;
   ok(passt, `Grading: "${inp}" vs "${ziel}" -> ${r} (erwartet ${erwartet})`);
 }
+// Grammatik-Checker
+const P = global.Grading.pruefe;
+const gcases = [
+  ['he go to the hotel', 'He goes to the hotel.', 'grammatik', '-s'],
+  ['a apple', 'an apple', 'grammatik', 'Vokal'],
+  ['Where you live?', 'Where do you live?', 'grammatik', 'do'],
+  ['I goed to London', 'I went to London.', 'grammatik', 'went'],
+  ['like I coffee would', 'I would like coffee', 'grammatik', 'Satzstellung'],
+];
+for (const [inp, ziel, stufe, stichwort] of gcases) {
+  const r = P(inp, ziel);
+  ok(r.stufe === stufe && r.hinweise.join(' ').includes(stichwort),
+     `Grammatik: "${inp}" -> ${r.stufe} (${r.hinweise.join(' / ').slice(0, 60)})`);
+}
 delete global.window;
 
 // ---------- 2. Browser-Tests ----------
@@ -154,6 +168,19 @@ await page.fill('#antwort', 'xyz komplett falsch');
 await page.click('#check');
 await page.waitForSelector('#feedback .explain', { timeout: 5000 });
 ok((await page.locator('#feedback .explain').textContent()).includes('Lösung'), 'Session: Falsch-Feedback mit Lösung');
+
+// Home: Stand-Fußzeile + Refresh-Button
+await page.click('#tabbar .tab:nth-child(1)');
+await page.waitForSelector('#refresh', { timeout: 5000 });
+ok((await page.locator('#view .note').first().textContent()).includes('Letzte Aktualisierung'), 'Home: Stand-Anzeige da');
+ok(await page.locator('#refresh').count() === 1, 'Home: Refresh-Button da');
+
+// Einstellungen: Erinnerungs-Assistent
+await page.click('#btn-settings');
+await page.waitForSelector('#ics-btn', { timeout: 5000 });
+ok(await page.locator('#ics-btn').count() === 1, 'Settings: Kalender-Button da');
+ok(await page.locator('#shortcut-btn').count() === 1, 'Settings: Kurzbefehl-Button da');
+ok(((await page.locator('#zeiten-vorschau').textContent()) || '').includes(':00'), 'Settings: Zeiten-Vorschau berechnet');
 
 // Statistik zeigt Balken
 await page.click('#tabbar .tab:nth-child(5)');

@@ -70,14 +70,18 @@
       function auswerten(aufgeben) {
         if (beantwortet) return;
         beantwortet = true;
-        var stufe = aufgeben ? 'falsch' : Grading.bewerte(input.value, k.en);
-        var text, klasse = 'explain';
+        var erg = aufgeben ? { stufe: 'falsch', hinweise: [] }
+                           : Grading.pruefe(input.value, k.en);
+        var stufe = erg.stufe, text;
         if (stufe === 'richtig') {
           punkte++; voll++; SRS.bewerten(k.id, true);
           text = '✅ <b>Richtig!</b> ' + k.en;
         } else if (stufe === 'schreib') {
           punkte += 0.5; teils++; SRS.bewertenTeil(k.id);
           text = '🟡 <b>Fast! Kleiner Rechtschreibfehler.</b><br>Richtig geschrieben: „' + k.en + '“';
+        } else if (stufe === 'grammatik') {
+          punkte += 0.5; teils++; SRS.bewertenTeil(k.id);
+          text = '🟡 <b>Fast richtig – kleiner Grammatikfehler.</b><br>Richtig: „' + k.en + '“';
         } else if (stufe === 'sinn') {
           punkte += 0.5; teils++; SRS.bewertenTeil(k.id);
           text = '🟡 <b>Sinngemäß richtig – teilweise bestanden!</b><br>Bessere Formulierung: „' + k.en + '“';
@@ -85,12 +89,17 @@
           SRS.bewerten(k.id, false);
           text = (aufgeben ? '📖 ' : '❌ ') + '<b>Die Lösung:</b> „' + k.en + '“';
         }
+        var warum = '';
+        if (erg.hinweise && erg.hinweise.length) {
+          warum = '<div class="explain" style="border-left-color:var(--warn)"><b>Warum?</b><br>' +
+            erg.hinweise.join('<br>') + '</div>';
+        }
         el.querySelector('#feedback').innerHTML =
-          '<div class="' + klasse + '">' + text +
-          ' <button class="iconbtn" style="color:var(--accent2);min-height:28px;font-size:18px" id="sag">🔊</button></div>' +
+          '<div class="explain">' + text +
+          ' <button class="iconbtn" style="color:var(--accent2);min-height:28px;font-size:18px" id="sag" aria-label="Vorlesen">🔊</button></div>' +
+          warum +
           '<button class="btn big" id="next">Weiter →</button>';
         el.querySelector('#sag').addEventListener('click', function () { Speech.speak(k.en); });
-        Speech.speak(k.en);
         var nb = el.querySelector('#next');
         nb.addEventListener('click', function () { idx++; umgedreht = false; zeige(); });
         nb.focus();

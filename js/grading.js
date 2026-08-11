@@ -177,3 +177,144 @@ window.Grading = (function () {
 
   return { bewerte: bewerte, vergleiche: vergleiche, normalize: normalize, levenshtein: levenshtein };
 })();
+
+// ===== Grammatik-Checker: erkennt typische Fehler und erklärt sie auf Deutsch =====
+window.Grading.pruefe = (function () {
+  var G = window.Grading;
+
+  var IRREGULAR = {
+    go: 'went', goed: 'went', buy: 'bought', buyed: 'bought', eat: 'ate', eated: 'ate',
+    drink: 'drank', drinked: 'drank', see: 'saw', seed: 'saw', seen: 'saw',
+    take: 'took', taked: 'took', come: 'came', comed: 'came', get: 'got', getted: 'got',
+    give: 'gave', gived: 'gave', have: 'had', haved: 'had', make: 'made', maked: 'made',
+    find: 'found', finded: 'found', pay: 'paid', payed: 'paid', say: 'said', sayed: 'said',
+    tell: 'told', telled: 'told', think: 'thought', thinked: 'thought',
+    speak: 'spoke', speaked: 'spoke', leave: 'left', leaved: 'left',
+    write: 'wrote', writed: 'wrote', read: 'read', drive: 'drove', drived: 'drove',
+    fly: 'flew', flyed: 'flew', sleep: 'slept', sleeped: 'slept',
+    lose: 'lost', losed: 'lost', forget: 'forgot', forgetted: 'forgot',
+    do: 'did', doed: 'did', be: 'was', is: 'was', are: 'were'
+  };
+  var VOKALE = { a: 1, e: 1, i: 1, o: 1, u: 1 };
+  var PRONOMEN3 = { he: 1, she: 1, it: 1 };
+
+  function tok(s) { return G.normalize(s).split(' ').filter(Boolean); }
+
+  // LCS-Alignment: liefert Paare gleicher Wörter, daraus fehlend/zuviel/ersetzt
+  function diff(a, b) {
+    var m = a.length, n = b.length;
+    var L = [];
+    for (var i = 0; i <= m; i++) { L.push(new Array(n + 1).fill(0)); }
+    for (i = m - 1; i >= 0; i--) for (var j = n - 1; j >= 0; j--) {
+      L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+    }
+    var ops = []; i = 0; var k = 0;
+    while (i < m && k < n) {
+      if (a[i] === b[k]) { ops.push(['=', a[i], b[k]]); i++; k++; }
+      else if (L[i + 1][k] >= L[i][k + 1]) { ops.push(['-', a[i], null]); i++; }
+      else { ops.push(['+', null, b[k]]); k++; }
+    }
+    while (i < m) { ops.push(['-', a[i++], null]); }
+    while (k < n) { ops.push(['+', null, b[k++]]); }
+    // benachbarte -/+ zu "ersetzt" zusammenfassen
+    var out = [];
+    for (i = 0; i < ops.length; i++) {
+      if (ops[i][0] === '-' && i + 1 < ops.length && ops[i + 1][0] === '+') {
+        out.push(['~', ops[i][1], ops[i + 1][2]]); i++;
+      } else if (ops[i][0] === '+' && i + 1 < ops.length && ops[i + 1][0] === '-') {
+        out.push(['~', ops[i + 1][1], ops[i][2]]); i++;
+      } else out.push(ops[i]);
+    }
+    return out;
+  }
+
+  function grammatikHinweise(eingabe, ziel) {
+    var te = tok(eingabe), tz = tok(ziel);
+    var ops = diff(te, tz);
+    var hinweise = [];
+    var nurGrammatik = true;   // alle Abweichungen durch Regeln erklärbar?
+    var abweichungen = 0;
+
+    for (var i = 0; i < ops.length; i++) {
+      var op = ops[i], typ = op[0], von = op[1], zu = op[2];
+      if (typ === '=') continue;
+      abweichungen++;
+      var erklaert = false;
+
+      if (typ === '~') {
+        // 3.-Person-s: go -> goes, work -> works
+        if ((zu === von + 's' || zu === von + 'es')) {
+          var subj = null;
+          for (var j = i - 1; j >= 0; j--) { if (ops[j][0] === '=') { subj = ops[j][1]; break; } }
+          hinweise.push('„' + von + '“ → „' + zu + '“: Bei he/she/it bekommt das Verb ein -s' +
+            (subj && PRONOMEN3[subj] ? ' (wegen „' + subj + '“)' : '') + '.');
+          erklaert = true;
+        }
+        // unregelmäßige Vergangenheit
+        else if (IRREGULAR[von] === zu) {
+          hinweise.push('„' + von + '“ → „' + zu + '“: Unregelmäßiges Verb – die Vergangenheitsform heißt „' + zu + '“.');
+          erklaert = true;
+        }
+        // a/an
+        else if (von === 'a' && zu === 'an') {
+          hinweise.push('„a“ → „an“: Vor Vokal (a, e, i, o, u) heißt es „an“.');
+          erklaert = true;
+        } else if (von === 'an' && zu === 'a') {
+          hinweise.push('„an“ → „a“: Vor Konsonant heißt es „a“.');
+          erklaert = true;
+        }
+        // Plural-s
+        else if (zu === von + 's' || zu === von + 'es') {
+          hinweise.push('„' + von + '“ → „' + zu + '“: Hier fehlt das Plural-s.');
+          erklaert = true;
+        }
+        else if (von === zu + 's') {
+          hinweise.push('„' + von + '“ → „' + zu + '“: Hier ist die Einzahl richtig – kein -s.');
+          erklaert = true;
+        }
+      }
+      if (typ === '+') {
+        if (zu === 'do' || zu === 'does' || zu === 'did') {
+          hinweise.push('Es fehlt das Hilfsverb „' + zu + '“: Fragen und Verneinungen brauchen do/does/did (z. B. „Where do you live?“).');
+          erklaert = true;
+        } else if (zu === 'the' || zu === 'a' || zu === 'an') {
+          hinweise.push('Es fehlt der Artikel „' + zu + '“.');
+          erklaert = true;
+        } else if (zu === 'to') {
+          hinweise.push('Es fehlt das Wörtchen „to“ (z. B. „I would like to …“).');
+          erklaert = true;
+        }
+      }
+      if (typ === '-') {
+        if (von === 'the' || von === 'a' || von === 'an') {
+          hinweise.push('Der Artikel „' + von + '“ ist hier zu viel.');
+          erklaert = true;
+        }
+      }
+      if (!erklaert) nurGrammatik = false;
+    }
+
+    // Gleiche Wörter, andere Reihenfolge?
+    if (!hinweise.length && abweichungen > 0) {
+      var se = te.slice().sort().join(' '), sz = tz.slice().sort().join(' ');
+      if (se === sz) {
+        hinweise.push('Alle Wörter stimmen, aber die Satzstellung nicht. Im Englischen gilt meist: Subjekt – Verb – Objekt.');
+        nurGrammatik = true;
+      }
+    }
+
+    return { hinweise: hinweise, nurGrammatik: nurGrammatik && hinweise.length > 0 };
+  }
+
+  // Gesamtprüfung: kombiniert Stufen-Bewertung mit Grammatik-Erklärungen.
+  return function (eingabe, ziel, alternativen) {
+    var stufe = G.bewerte(eingabe, ziel, alternativen);
+    var gr = grammatikHinweise(eingabe, ziel);
+    if (stufe === 'richtig') return { stufe: 'richtig', hinweise: [] };
+    // Inhalt eigentlich falsch/sinn, aber alle Abweichungen grammatisch erklärbar -> Stufe 'grammatik'
+    if (gr.nurGrammatik && (stufe === 'falsch' || stufe === 'sinn' || stufe === 'schreib')) {
+      return { stufe: 'grammatik', hinweise: gr.hinweise };
+    }
+    return { stufe: stufe, hinweise: gr.hinweise };
+  };
+})();

@@ -66,6 +66,12 @@
       '<button class="btn ghost" id="test-speech">🔊 Testen („Welcome to London!“)</button>' +
 
       '<h2 class="sect">Erinnerung bei geschlossener App</h2>' +
+      '<div class="statcard"><p class="note"><b>Automatisch per Kalender:</b> Ich baue dir aus deinen ' +
+      'Einstellungen oben fertige Kalender-Erinnerungen (<span id="zeiten-vorschau"></span>). ' +
+      'Nach dem Tipp auf den Button öffnet iOS die Datei – dort nur noch ' +
+      '<b>„Zum Kalender hinzufügen“</b> bestätigen. iOS erinnert dich dann täglich von selbst.</p>' +
+      '<div class="spacer"></div>' +
+      '<button class="btn" id="ics-btn">📅 Erinnerungen in den Kalender legen</button></div>' +
       '<div class="statcard"><p class="note">' +
       'Die App kann dich nur erinnern, solange sie geöffnet ist. Für Erinnerungen bei ' +
       'geschlossener App nutze die vorinstallierte Apple-App <b>Kurzbefehle</b>:<br><br>' +
@@ -73,8 +79,12 @@
       '2. <b>Tageszeit</b> wählen, Uhrzeit(en) einstellen (z. B. 9:00, 12:00, 18:00), ' +
       '<b>Sofort ausführen</b> aktivieren<br>' +
       '3. Als Aktion <b>App öffnen</b> → „Englisch lernen“ wählen (oder Aktion „URL öffnen“ mit der App-Adresse)<br>' +
-      '4. Fertig – dein iPhone öffnet die App zur Lernzeit automatisch.' +
-      '</p></div>';
+      '4. Fertig – dein iPhone öffnet die App zur Lernzeit automatisch.<br><br>' +
+      'Deine Zeiten laut Einstellungen: <b><span id="zeiten-vorschau2"></span></b><br>' +
+      '<i>Hinweis: Apple erlaubt Apps nicht, Kurzbefehle vollautomatisch zu installieren – ' +
+      'darum diese wenigen Schritte von Hand. Die Kalender-Lösung oben geht ohne.</i></p>' +
+      '<div class="spacer"></div>' +
+      '<button class="btn ghost" id="shortcut-btn">⚡ Kurzbefehle-App öffnen</button></div>';
 
     el.innerHTML = html;
 
@@ -117,6 +127,69 @@
     });
     el.querySelector('#test-speech').addEventListener('click', function () {
       Speech.speak('Welcome to London!');
+    });
+
+    // ---- Erinnerungs-Assistent ----
+    function erinnerungsZeiten() {
+      var iv = p.intervallMin || 120;
+      if (iv < 60) iv = 60;                 // Kalender: minimal stündlich
+      var von = p.ruheBis, bis = p.ruheVon; // Wachfenster = Ende Ruhe .. Beginn Ruhe
+      if (von === bis) { von = 8; bis = 21; }
+      var zeiten = [];
+      var h = von;
+      while (true) {
+        var ende = bis > von ? bis : bis + 24;
+        if (h >= ende) break;
+        zeiten.push(((h % 24) < 10 ? '0' : '') + (h % 24) + ':00');
+        h += Math.max(1, Math.round(iv / 60));
+        if (zeiten.length >= 12) break;
+      }
+      if (!zeiten.length) zeiten = ['09:00', '18:00'];
+      return zeiten;
+    }
+    function zeigeZeiten() {
+      var z = erinnerungsZeiten().join(', ') + ' Uhr';
+      var a = el.querySelector('#zeiten-vorschau'); if (a) a.textContent = 'täglich ' + z;
+      var b = el.querySelector('#zeiten-vorschau2'); if (b) b.textContent = z;
+    }
+    zeigeZeiten();
+    ['intervall', 'ruheVon', 'ruheBis'].forEach(function (id) {
+      el.querySelector('#' + id).addEventListener('change', zeigeZeiten);
+    });
+
+    el.querySelector('#ics-btn').addEventListener('click', function () {
+      var zeiten = erinnerungsZeiten();
+      var appUrl = location.origin + location.pathname;
+      var stamp = new Date();
+      var d = String(stamp.getFullYear()) +
+        String(stamp.getMonth() + 1).padStart(2, '0') +
+        String(stamp.getDate()).padStart(2, '0');
+      var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Englisch lernen//DE', 'CALSCALE:GREGORIAN'];
+      zeiten.forEach(function (z, i) {
+        var hm = z.replace(':', '') + '00';
+        ics.push('BEGIN:VEVENT',
+          'UID:englisch-lernen-' + i + '-' + d + '@markusplein33-debug.github.io',
+          'DTSTAMP:' + d + 'T000000Z',
+          'DTSTART:' + d + 'T' + hm,
+          'DURATION:PT5M',
+          'RRULE:FREQ=DAILY',
+          'SUMMARY:📚 Englisch lernen (' + p.vokabeln + ' Vokabeln + ' + p.grammatik + ' Grammatik)',
+          'DESCRIPTION:Lern-Einheit starten: ' + appUrl,
+          'URL:' + appUrl,
+          'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Englisch lernen!', 'TRIGGER:PT0S', 'END:VALARM',
+          'END:VEVENT');
+      });
+      ics.push('END:VCALENDAR');
+      var blob = new Blob([ics.join('\r\n')], { type: 'text/calendar' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'englisch-erinnerungen.ics';
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+    });
+
+    el.querySelector('#shortcut-btn').addEventListener('click', function () {
+      location.href = 'shortcuts://create-shortcut';
     });
   };
   Router.register('einstellungen', Views.settings);
