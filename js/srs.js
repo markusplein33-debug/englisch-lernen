@@ -24,6 +24,14 @@ window.SRS = (function () {
     return e;
   }
 
+  // Teilweise richtig: Box bleibt, Wiedervorlage in ~4 Stunden.
+  function bewertenTeil(id) {
+    var e = eintrag(id);
+    e.due = Date.now() + 4 * 60 * 60 * 1000;
+    Store.save();
+    return e;
+  }
+
   // Fällige Karten (optional auf ein Deck begrenzt), schwerste zuerst.
   function faellig(deckId, limit) {
     var s = Store.load();
@@ -69,5 +77,5 @@ window.SRS = (function () {
     return list.slice(0, limit || 10);
   }
 
-  return { bewerten: bewerten, faellig: faellig, verteilung: verteilung, schwerste: schwerste, INTERVALLE: INTERVALLE };
+  return { bewerten: bewerten, bewertenTeil: bewertenTeil, faellig: faellig, verteilung: verteilung, schwerste: schwerste, INTERVALLE: INTERVALLE };
 })();

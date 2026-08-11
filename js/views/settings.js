@@ -4,6 +4,7 @@
     Router.setTitle('⚙️ Einstellungen');
     var s = Store.load();
     var p = s.pensum;
+    var themenModus = Array.isArray(p.themen) ? 'auswahl' : (p.themen || 'zufall');
 
     function opt(val, label, cur) {
       return '<option value="' + val + '"' + (String(cur) === String(val) ? ' selected' : '') + '>' +
@@ -34,6 +35,26 @@
       '<select id="ruheVon" style="flex:1">' + stunden(p.ruheVon) + '</select>' +
       '<span>bis</span>' +
       '<select id="ruheBis" style="flex:1">' + stunden(p.ruheBis) + '</select></div></div>' +
+
+      '<div class="field"><label>Antwortmodus in Lern-Einheiten</label>' +
+      '<select id="antwortmodus">' +
+        opt('tippen', 'Eintippen mit Bewertung (empfohlen)', s.einstellungen.antwortmodus) +
+        opt('karte', 'Karteikarte umdrehen (selbst einschätzen)', s.einstellungen.antwortmodus) +
+      '</select></div>' +
+      '<div class="field"><label>Themen der Lern-Einheiten</label>' +
+      '<select id="themenmodus">' +
+        opt('zufall', '🎲 Zufällig gemischt (alle Themen)', themenModus) +
+        opt('zufallsdeck', '🎯 Ein zufälliges Thema pro Einheit', themenModus) +
+        opt('auswahl', '☑️ Nur bestimmte Themen …', themenModus) +
+      '</select></div>' +
+      '<div id="themen-liste" class="statcard' + (themenModus === 'auswahl' ? '' : ' gone') + '">' +
+      APP_DATA.decks.map(function (d) {
+        var checked = Array.isArray(p.themen) && p.themen.indexOf(d.id) >= 0;
+        return '<label style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:15px">' +
+          '<input type="checkbox" class="themacheck" value="' + d.id + '"' +
+          (checked ? ' checked' : '') + ' style="width:20px;height:20px">' +
+          d.emoji + ' ' + d.titel + '</label>';
+      }).join('') + '</div>' +
 
       '<h2 class="sect">Aussprache</h2>' +
       '<div class="field"><label>Sprechtempo</label>' +
@@ -77,6 +98,23 @@
     bind('ruheVon', function (v) { p.ruheVon = parseInt(v, 10); });
     bind('ruheBis', function (v) { p.ruheBis = parseInt(v, 10); });
     bind('tempo', function (v) { s.einstellungen.tempo = parseFloat(v); });
+    bind('antwortmodus', function (v) { s.einstellungen.antwortmodus = v; });
+    function leseThemenAuswahl() {
+      var ids = [];
+      el.querySelectorAll('.themacheck').forEach(function (c) {
+        if (c.checked) ids.push(c.value);
+      });
+      return ids.length ? ids : 'zufall';
+    }
+    bind('themenmodus', function (v) {
+      el.querySelector('#themen-liste').classList.toggle('gone', v !== 'auswahl');
+      p.themen = (v === 'auswahl') ? leseThemenAuswahl() : v;
+    });
+    el.querySelectorAll('.themacheck').forEach(function (c) {
+      c.addEventListener('change', function () {
+        p.themen = leseThemenAuswahl(); Store.save();
+      });
+    });
     el.querySelector('#test-speech').addEventListener('click', function () {
       Speech.speak('Welcome to London!');
     });

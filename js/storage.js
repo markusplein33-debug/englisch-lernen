@@ -16,9 +16,10 @@ window.Store = (function () {
         grammatik: 2,
         ruheVon: 21,         // Stunde
         ruheBis: 8,
-        letzteEinheit: 0     // Timestamp
+        letzteEinheit: 0,    // Timestamp
+        themen: 'zufall'     // 'zufall' | 'zufallsdeck' | Array von Deck-IDs
       },
-      einstellungen: { stimme: 'auto', tempo: 0.9 }
+      einstellungen: { stimme: 'auto', tempo: 0.9, antwortmodus: 'tippen' }
     };
   };
 
@@ -35,6 +36,9 @@ window.Store = (function () {
     Object.keys(d).forEach(function (k) { if (state[k] === undefined) state[k] = d[k]; });
     Object.keys(d.pensum).forEach(function (k) {
       if (state.pensum[k] === undefined) state.pensum[k] = d.pensum[k];
+    });
+    Object.keys(d.einstellungen).forEach(function (k) {
+      if (state.einstellungen[k] === undefined) state.einstellungen[k] = d.einstellungen[k];
     });
     return state;
   }

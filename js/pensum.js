@@ -30,21 +30,38 @@ window.Pensum = (function () {
     return new Date(basis + p.intervallMin * 60000);
   }
 
+  // Deck-Auswahl laut Einstellung pensum.themen
+  function aktiveDecks() {
+    var t = Store.load().pensum.themen || 'zufall';
+    var alle = APP_DATA.decks.map(function (d) { return d.id; });
+    if (t === 'zufall') return alle;
+    if (t === 'zufallsdeck') {
+      return [alle[Math.floor(Math.random() * alle.length)]];
+    }
+    if (Array.isArray(t) && t.length) {
+      return t.filter(function (id) { return alle.indexOf(id) >= 0; });
+    }
+    return alle;
+  }
+
   // Gemischte Session: fällige Karten (bevorzugt) + Grammatikübungen aus schwachen Lektionen.
   function baueSession() {
     var p = Store.load().pensum;
     var s = Store.load();
+    var decks = aktiveDecks();
+    var imThema = function (k) { return decks.indexOf(k.deck) >= 0; };
 
-    var karten = SRS.faellig(null, p.vokabeln);
+    var karten = SRS.faellig(null).filter(imThema).slice(0, p.vokabeln);
     if (karten.length < p.vokabeln) {
-      // Auffüllen mit zufälligen neuen Karten
+      // Auffüllen mit zufälligen weiteren Karten aus den gewählten Themen
       var vorhandene = {};
       karten.forEach(function (k) { vorhandene[k.karte.id] = true; });
       var rest = Quiz.mischen(APP_DATA.alleKarten().filter(function (k) {
-        return !vorhandene[k.karte.id];
+        return imThema(k) && !vorhandene[k.karte.id];
       })).slice(0, p.vokabeln - karten.length);
       karten = karten.concat(rest);
     }
+    karten = Quiz.mischen(karten);
 
     // Grammatik: Übungen aus Lektionen mit höchster Fehlerquote, sonst zufällig.
     var uebungen = [];
@@ -81,7 +98,7 @@ window.Pensum = (function () {
     Store.save();
   }
 
-  return { faelligeEinheiten: faelligeEinheiten, baueSession: baueSession,
+  return { faelligeEinheiten: faelligeEinheiten, baueSession: baueSession, aktiveDecks: aktiveDecks,
            einheitErledigt: einheitErledigt, naechsteFaelligkeit: naechsteFaelligkeit,
            fehlerquote: fehlerquote };
 })();

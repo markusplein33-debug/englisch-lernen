@@ -1,6 +1,6 @@
 // Service Worker: Precache aller App-Dateien, cache-first, offline-fähig.
 // Bei jeder Änderung an der App die VERSION erhöhen!
-var VERSION = 1;
+var VERSION = 2;
 var CACHE = 'notizen-en-v' + VERSION;
 
 var ASSETS = [
@@ -11,6 +11,7 @@ var ASSETS = [
   'js/app.js',
   'js/router.js',
   'js/storage.js',
+  'js/grading.js',
   'js/speech.js',
   'js/srs.js',
   'js/quiz.js',

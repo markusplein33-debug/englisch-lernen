@@ -56,6 +56,32 @@ for (const a of assets) {
 }
 ok(missing === 0, `Alle ${assets.length} Precache-Dateien existieren`);
 
+// ---------- 1b. Grading-Unit-Checks (im Browser-Kontext später, hier via Node) ----------
+console.log('1b) Grading');
+global.window = global;
+global.Store = { load: () => ({ einstellungen: { tempo: 0.9 } }) };
+await import(url.pathToFileURL(path.join(ROOT, 'js', 'grading.js')).href);
+const G = global.Grading;
+const cases = [
+  ['I have a reservation.', 'I have a reservation.', 'richtig'],
+  ['i have a reservation', 'I have a reservation.', 'richtig'],
+  ['I hav a reservaton', 'I have a reservation.', 'schreib'],
+  ['Could I get the check, please?', 'Can I have the bill, please?', 'sinn'],
+  ['Where is the toilet?', 'Where is the restroom?', 'richtig-oder-sinn'],
+  ['key card', 'key card', 'richtig'],
+  ['keycard', 'key card', 'schreib'],
+  ['banana', 'key card', 'falsch'],
+  ['recieve', 'receive', 'schreib'],
+  ['I would like a coffee', "I'd like a coffee, please.", 'richtig-oder-sinn'],
+  ['The weather is nice', 'Where is the station?', 'falsch'],
+];
+for (const [inp, ziel, erwartet] of cases) {
+  const r = G.bewerte(inp, ziel);
+  const passt = erwartet === 'richtig-oder-sinn' ? (r === 'richtig' || r === 'sinn' || r === 'schreib') : r === erwartet;
+  ok(passt, `Grading: "${inp}" vs "${ziel}" -> ${r} (erwartet ${erwartet})`);
+}
+delete global.window;
+
 // ---------- 2. Browser-Tests ----------
 console.log('2) Browser (Chromium headless)');
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
@@ -121,6 +147,13 @@ ok((await page.locator('.banner h2').textContent()).includes('fällig'), 'Pensum
 await page.click('#start-session');
 await page.waitForSelector('.qmeta', { timeout: 5000 });
 ok(await page.locator('.qmeta').count() === 1, 'Lern-Einheit startet');
+// Eintipp-Modus: Antwortfeld vorhanden, teilweise-Bewertung funktioniert
+ok(await page.locator('#antwort').count() === 1, 'Session: Eingabefeld (Tipp-Modus) da');
+const zielDe = await page.locator('.flashcard .word').textContent();
+await page.fill('#antwort', 'xyz komplett falsch');
+await page.click('#check');
+await page.waitForSelector('#feedback .explain', { timeout: 5000 });
+ok((await page.locator('#feedback .explain').textContent()).includes('Lösung'), 'Session: Falsch-Feedback mit Lösung');
 
 // Statistik zeigt Balken
 await page.click('#tabbar .tab:nth-child(5)');

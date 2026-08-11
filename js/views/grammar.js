@@ -79,7 +79,7 @@
       }
       GrammarUI.frage(el, l, liste[idx],
         'Übung ' + (idx + 1) + ' / ' + liste.length,
-        function (ok) { if (ok) richtig++; idx++; zeige(); });
+        function (erg) { if (erg === 'richtig' || erg === 'teil') richtig++; idx++; zeige(); });
     }
     zeige();
   }
@@ -101,20 +101,23 @@
       html += '<div id="feedback"></div>';
       el.innerHTML = html;
 
-      function verbuchen(ok) {
+      function verbuchen(erg) {
         var s = Store.load();
         if (!s.grammatik[l.id]) s.grammatik[l.id] = { geloest: {}, fehler: {}, fertig: false };
-        if (ok) s.grammatik[l.id].geloest[u.id] = true;
+        if (erg === 'richtig' || erg === 'teil') s.grammatik[l.id].geloest[u.id] = true;
         else s.grammatik[l.id].fehler[u.id] = (s.grammatik[l.id].fehler[u.id] || 0) + 1;
         Store.save();
       }
-      function feedback(ok, richtigText) {
-        verbuchen(ok);
+      function feedback(erg, richtigText) {
+        verbuchen(erg);
+        var text;
+        if (erg === 'richtig') text = '✅ Richtig! ';
+        else if (erg === 'teil') text = '🟡 Fast! Kleiner Rechtschreibfehler – richtig: „' + richtigText + '“. ';
+        else text = '❌ Richtig wäre: „' + richtigText + '“. ';
         el.querySelector('#feedback').innerHTML =
-          '<div class="explain">' + (ok ? '✅ Richtig! ' : '❌ Richtig wäre: „' + richtigText + '“. ') +
-          (u.erklaerung || '') + '</div>' +
+          '<div class="explain">' + text + (u.erklaerung || '') + '</div>' +
           '<button class="btn big" id="next">Weiter →</button>';
-        el.querySelector('#next').addEventListener('click', function () { done(ok); });
+        el.querySelector('#next').addEventListener('click', function () { done(erg); });
       }
 
       if (u.typ === 'mc') {
@@ -127,17 +130,16 @@
             var ok = i === u.richtig;
             el.querySelectorAll('.q-option')[u.richtig].classList.add('correct');
             if (!ok) b.classList.add('wrong');
-            feedback(ok, u.optionen[u.richtig]);
+            feedback(ok ? 'richtig' : 'falsch', u.optionen[u.richtig]);
           });
         });
       } else {
         var input = el.querySelector('#gap');
         function pruefe() {
-          var val = (input.value || '').trim().toLowerCase().replace(/\s+/g, ' ');
-          var ok = u.antwort.some(function (a) {
-            return a.trim().toLowerCase().replace(/\s+/g, ' ') === val;
-          });
-          feedback(ok, u.antwort[0]);
+          var stufe = Grading.bewerte(input.value, u.antwort[0], u.antwort.slice(1));
+          // Bei Lückentexten zählt „sinngemäß" nicht – nur exakt oder Tippfehler.
+          var erg = stufe === 'richtig' ? 'richtig' : stufe === 'schreib' ? 'teil' : 'falsch';
+          feedback(erg, u.antwort[0]);
         }
         el.querySelector('#check').addEventListener('click', pruefe);
         input.addEventListener('keydown', function (e) { if (e.key === 'Enter') pruefe(); });
