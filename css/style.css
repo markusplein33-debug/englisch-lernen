@@ -1,0 +1,147 @@
+/* Englisch lernen – mobile-first, offline PWA */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f6fa;
+  --card: #ffffff;
+  --text: #16233a;
+  --muted: #5b6b85;
+  --accent: #1e3a5f;
+  --accent2: #2f6fb1;
+  --ok: #1f9d55;
+  --warn: #e0a800;
+  --bad: #d64541;
+  --line: #dbe2ee;
+  --box1: #d64541; --box2: #e8833a; --box3: #e0a800; --box4: #7cb342; --box5: #1f9d55;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #10161f; --card: #1a2330; --text: #e8edf5; --muted: #93a3ba;
+    --accent: #7fb3e8; --accent2: #4d90d6; --line: #2a3648;
+  }
+}
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  height: 100%; overscroll-behavior-y: none; }
+body { display: flex; flex-direction: column; min-height: 100dvh; }
+
+#topbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: calc(env(safe-area-inset-top) + 10px) 14px 10px;
+  background: var(--accent); color: #fff; position: sticky; top: 0; z-index: 10;
+}
+#topbar h1 { font-size: 18px; margin: 0; flex: 1; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.iconbtn { background: none; border: none; color: #fff; font-size: 20px;
+  min-width: 44px; min-height: 44px; cursor: pointer; }
+.hidden { visibility: hidden; }
+.gone { display: none !important; }
+
+#view { flex: 1; padding: 14px; padding-bottom: 90px; max-width: 640px; width: 100%; margin: 0 auto; }
+
+#tabbar { position: fixed; bottom: 0; left: 0; right: 0; display: flex;
+  background: var(--card); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom); z-index: 10; }
+#tabbar .tab { flex: 1; background: none; border: none; color: var(--muted);
+  font-size: 11px; padding: 8px 2px 6px; min-height: 52px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; }
+#tabbar .tab span { font-size: 20px; }
+#tabbar .tab.active { color: var(--accent2); font-weight: 600; }
+
+.tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tile { background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 16px 12px; text-align: center; cursor: pointer; font-size: 15px;
+  color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.06); min-height: 92px; }
+.tile .big { font-size: 30px; display: block; margin-bottom: 6px; }
+.tile small { color: var(--muted); display: block; margin-top: 4px; }
+
+.banner { border-radius: 16px; padding: 16px; margin-bottom: 14px; color: #fff;
+  background: linear-gradient(135deg, var(--accent2), var(--accent)); }
+.banner h2 { margin: 0 0 6px; font-size: 17px; }
+.banner p { margin: 0 0 12px; font-size: 14px; opacity: .92; }
+.banner.done { background: linear-gradient(135deg, #1f9d55, #157347); }
+
+.btn { display: inline-block; border: none; border-radius: 12px; padding: 13px 18px;
+  font-size: 16px; font-weight: 600; cursor: pointer; min-height: 48px;
+  background: var(--accent2); color: #fff; }
+.btn.ghost { background: var(--card); color: var(--accent2); border: 1px solid var(--accent2); }
+.btn.big { width: 100%; margin-top: 8px; }
+.btn.ok { background: var(--ok); }
+.btn.bad { background: var(--bad); }
+.btn:disabled { opacity: .5; }
+.btn.light { background: rgba(255,255,255,.22); color: #fff; }
+
+.list { display: flex; flex-direction: column; gap: 10px; }
+.rowcard { background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 14px; cursor: pointer; display: flex; align-items: center; gap: 12px; }
+.rowcard .emoji { font-size: 26px; }
+.rowcard .grow { flex: 1; }
+.rowcard h3 { margin: 0 0 3px; font-size: 16px; }
+.rowcard small { color: var(--muted); }
+.rowcard .chev { color: var(--muted); }
+.rowcard.difficult { border-left: 4px solid var(--bad); }
+
+.progressbar { height: 8px; border-radius: 4px; background: var(--line);
+  overflow: hidden; display: flex; margin-top: 8px; }
+.progressbar i { display: block; height: 100%; }
+
+/* Karteikarte */
+.flashcard { background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+  min-height: 260px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; padding: 24px; margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07); cursor: pointer; }
+.flashcard .word { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+.flashcard .hint { color: var(--muted); font-size: 14px; margin-top: 10px; }
+.flashcard .side-label { color: var(--muted); font-size: 12px; text-transform: uppercase;
+  letter-spacing: .08em; margin-bottom: 14px; }
+.speakbtn { background: var(--bg); border: 1px solid var(--line); border-radius: 50%;
+  width: 52px; height: 52px; font-size: 22px; cursor: pointer; margin-top: 14px; }
+.answerbtns { display: flex; gap: 10px; }
+.answerbtns .btn { flex: 1; }
+
+/* Quiz */
+.q-option { display: block; width: 100%; text-align: left; background: var(--card);
+  border: 1px solid var(--line); border-radius: 12px; padding: 14px; font-size: 16px;
+  margin-bottom: 10px; cursor: pointer; color: var(--text); min-height: 48px; }
+.q-option.correct { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, var(--card)); }
+.q-option.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--card)); }
+.explain { background: var(--card); border-left: 4px solid var(--accent2); border-radius: 8px;
+  padding: 12px; font-size: 14px; color: var(--muted); margin-top: 6px; }
+.qmeta { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+
+input.gap { font-size: 17px; padding: 12px; border-radius: 10px; border: 1px solid var(--line);
+  width: 100%; background: var(--card); color: var(--text); margin-bottom: 10px; }
+
+/* Grammatik */
+.lesson-section { background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 14px; margin-bottom: 12px; }
+.lesson-section h3 { margin: 0 0 8px; font-size: 16px; color: var(--accent2); }
+.lesson-section p { margin: 0; font-size: 15px; line-height: 1.5; }
+.example { display: flex; flex-direction: column; margin-top: 10px; padding: 10px;
+  background: var(--bg); border-radius: 10px; }
+.example .en { font-weight: 600; }
+.example .de { color: var(--muted); font-size: 14px; }
+
+/* Statistik */
+.statcard { background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 14px; margin-bottom: 12px; }
+.statcard h3 { margin: 0 0 10px; font-size: 15px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
+.streakrow { display: flex; gap: 6px; justify-content: space-between; }
+.streakday { flex: 1; text-align: center; font-size: 12px; color: var(--muted); }
+.streakday .dot { width: 28px; height: 28px; border-radius: 50%; background: var(--line);
+  margin: 0 auto 4px; display: flex; align-items: center; justify-content: center; }
+.streakday .dot.hit { background: var(--ok); color: #fff; }
+
+/* Einstellungen */
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+.field select, .field input { width: 100%; font-size: 16px; padding: 12px;
+  border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
+.note { font-size: 13px; color: var(--muted); line-height: 1.5; }
+h2.sect { font-size: 15px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: .06em; margin: 22px 0 10px; }
+
+.center { text-align: center; }
+.result-big { font-size: 44px; margin: 10px 0; }
+.spacer { height: 10px; }

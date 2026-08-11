@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Englisch">
+  <meta name="theme-color" content="#1e3a5f">
+  <meta name="description" content="Englisch lernen für unterwegs – offline, mit Karteikarten, Quiz und Grammatik.">
+  <title>Englisch lernen</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="topbar">
+    <button id="btn-back" class="iconbtn hidden" aria-label="Zurück">←</button>
+    <h1 id="title">Englisch lernen</h1>
+    <button id="btn-settings" class="iconbtn" aria-label="Einstellungen">⚙️</button>
+  </header>
+
+  <main id="view"></main>
+
+  <nav id="tabbar">
+    <button data-route="#/" class="tab active"><span>🏠</span>Start</button>
+    <button data-route="#/karten" class="tab"><span>🃏</span>Karten</button>
+    <button data-route="#/quiz" class="tab"><span>❓</span>Quiz</button>
+    <button data-route="#/grammatik" class="tab"><span>📖</span>Grammatik</button>
+    <button data-route="#/statistik" class="tab"><span>📊</span>Statistik</button>
+  </nav>
+
+  <!-- Daten -->
+  <script src="js/data/index.js"></script>
+  <script src="js/data/deck-hotel.js"></script>
+  <script src="js/data/deck-restaurant.js"></script>
+  <script src="js/data/deck-flughafen.js"></script>
+  <script src="js/data/deck-einkaufen.js"></script>
+  <script src="js/data/deck-notfall.js"></script>
+  <script src="js/data/deck-smalltalk.js"></script>
+  <script src="js/data/deck-verkehr.js"></script>
+  <script src="js/data/deck-basis.js"></script>
+  <script src="js/data/quiz-reise.js"></script>
+  <script src="js/data/grammar-lessons.js"></script>
+  <!-- Kern -->
+  <script src="js/storage.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/srs.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/pensum.js"></script>
+  <script src="js/router.js"></script>
+  <!-- Views -->
+  <script src="js/views/home.js"></script>
+  <script src="js/views/flashcards.js"></script>
+  <script src="js/views/quizview.js"></script>
+  <script src="js/views/grammar.js"></script>
+  <script src="js/views/stats.js"></script>
+  <script src="js/views/settings.js"></script>
+  <script src="js/views/session.js"></script>
+  <!-- Start -->
+  <script src="js/app.js"></script>
+</body>
+</html>
