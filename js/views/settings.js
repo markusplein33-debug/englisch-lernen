@@ -216,7 +216,9 @@
     });
 
     // Baut die Terminliste für die Kalenderdatei (nur Einzeltermine, nur heute).
-    function baueTermine(zeiten, datum) {
+    // Feste UIDs + steigende SEQUENCE: ein neuer Export ERSETZT die alten Termine
+    // im Kalender (bzw. verschiebt sie auf heute), statt Duplikate anzulegen.
+    function baueTermine(zeiten, datum, seq) {
       var appUrl = location.origin + location.pathname;
       return zeiten.map(function (z, i) {
         return {
@@ -225,7 +227,8 @@
           zeit: z.replace(':', ''),
           titel: '📚 Englisch lernen (' + p.vokabeln + ' Vokabeln + ' + p.grammatik + ' Grammatik)',
           beschreibung: 'Lern-Einheit starten: ' + appUrl,
-          url: appUrl
+          url: appUrl,
+          seq: seq
         };
       });
     }
@@ -239,10 +242,11 @@
         return;
       }
       var datum = Ics.datumStempel(new Date());
+      s.pensum.icsSeq = (s.pensum.icsSeq || 0) + 2;
       // Merken, was angelegt wurde – damit „Entfernen" exakt dieselben Termine storniert.
-      s.pensum.kalender = { zeiten: zeiten, datum: datum };
+      s.pensum.kalender = { zeiten: zeiten, datum: datum, seq: s.pensum.icsSeq };
       Store.save();
-      Ics.lade(Ics.erzeuge(baueTermine(zeiten, datum), false), 'englisch-erinnerungen.ics');
+      Ics.lade(Ics.erzeuge(baueTermine(zeiten, datum, s.pensum.icsSeq), false), 'englisch-erinnerungen.ics');
       el.querySelector('#ics-status').innerHTML =
         '📅 ' + zeiten.length + ' Erinnerung' + (zeiten.length === 1 ? '' : 'en') +
         ' für heute erstellt. 💡 Tipp: Beim Hinzufügen als Kalender am besten einen eigenen ' +
@@ -257,7 +261,7 @@
           'Über diesen Button wurden noch keine Erinnerungen angelegt.';
         return;
       }
-      Ics.lade(Ics.erzeuge(baueTermine(k.zeiten, k.datum), true), 'englisch-erinnerungen-entfernen.ics');
+      Ics.lade(Ics.erzeuge(baueTermine(k.zeiten, k.datum, (k.seq || 0) + 1), true), 'englisch-erinnerungen-entfernen.ics');
       el.querySelector('#ics-status').innerHTML =
         '🗑 Absage-Datei erstellt – öffnen und bestätigen, dann verschwinden die Termine. ' +
         '<b>Falls dein iPhone die Absage nicht anbietet</b> (Apple unterstützt das nicht auf jedem Gerät): ' +

@@ -7,7 +7,8 @@
     return String(d.getFullYear()) + pad(d.getMonth() + 1) + pad(d.getDate());
   }
 
-  // termine: [{ uid, datum:'YYYYMMDD', zeit:'HHMM', titel, beschreibung, url }]
+  // termine: [{ uid, datum:'YYYYMMDD', zeit:'HHMM', titel, beschreibung, url, seq }]
+  // Gleiche UID + höhere SEQUENCE = der Kalender ERSETZT den vorhandenen Termin.
   // cancel=true erzeugt eine Storno-Datei mit denselben Termin-IDs (UIDs) –
   // der Kalender erkennt die Termine daran und entfernt sie.
   function erzeuge(termine, cancel) {
@@ -20,7 +21,7 @@
         'DTSTAMP:' + stamp + 'T000000Z',
         'DTSTART:' + t.datum + 'T' + t.zeit + '00',
         'DURATION:PT5M',
-        'SEQUENCE:' + (cancel ? '2' : '0'),
+        'SEQUENCE:' + (t.seq !== undefined ? t.seq : (cancel ? 2 : 0)),
         'SUMMARY:' + t.titel,
         'DESCRIPTION:' + t.beschreibung,
         'URL:' + t.url);

@@ -35,19 +35,25 @@
       el.querySelector('#home').addEventListener('click', function () { location.hash = '#/'; });
       el.querySelector('#remind').addEventListener('click', function () {
         var appUrl = location.origin + location.pathname;
+        var s = Store.load();
+        // Feste UID + steigende SEQUENCE: eine neue Erinnerung ERSETZT die vorherige
+        // im Kalender, statt sich daneben zu stapeln.
+        s.pensum.icsSeq = (s.pensum.icsSeq || 0) + 2;
+        Store.save();
         var termin = {
-          uid: 'englisch-lernen-einmal-' + Ics.datumStempel(naechste) +
-            naechsteHm.replace(':', '') + '@markusplein33-debug.github.io',
+          uid: 'englisch-lernen-naechste@markusplein33-debug.github.io',
           datum: Ics.datumStempel(naechste),
           zeit: naechsteHm.replace(':', ''),
           titel: '📚 Englisch lernen – nächste Einheit',
           beschreibung: 'Lern-Einheit starten: ' + appUrl,
-          url: appUrl
+          url: appUrl,
+          seq: s.pensum.icsSeq
         };
         Ics.lade(Ics.erzeuge([termin], false), 'englisch-erinnerung.ics');
         el.querySelector('#remind-status').innerHTML =
           '✅ Datei erstellt – öffnen und <b>„Zum Kalender hinzufügen“</b> bestätigen. ' +
-          'Der Termin gilt nur einmalig um ' + naechsteHm + ' Uhr.';
+          'Der Termin gilt nur einmalig um ' + naechsteHm + ' Uhr – eine eventuell ' +
+          'vorhandene ältere Erinnerung wird dabei ersetzt.';
       });
     }
 

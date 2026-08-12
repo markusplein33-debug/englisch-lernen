@@ -210,8 +210,9 @@ ok(await page.locator('#ics-btn').count() === 1, 'Settings: Kalender-Button da')
 ok(await page.locator('#shortcut-btn').count() === 1, 'Settings: Kurzbefehl-Button da');
 ok(((await page.locator('#zeiten-vorschau2').textContent()) || '').includes(':00'), 'Settings: Zeiten-Vorschau berechnet');
 // Ics-Helfer: Einzeltermin ohne Wiederholung
-const einzel = await page.evaluate(() => Ics.erzeuge([{uid:'t@x',datum:'20260812',zeit:'1400',titel:'T',beschreibung:'B',url:'u'}], false));
-ok(einzel.includes('DTSTART:20260812T140000') && !einzel.includes('RRULE'), 'Ics: Einzeltermin ohne RRULE');
+const einzel = await page.evaluate(() => Ics.erzeuge([{uid:'t@x',datum:'20260812',zeit:'1400',titel:'T',beschreibung:'B',url:'u',seq:4}], false));
+ok(einzel.includes('DTSTART:20260812T140000') && !einzel.includes('RRULE') &&
+   einzel.includes('SEQUENCE:4'), 'Ics: Einzeltermin ohne RRULE, mit SEQUENCE');
 ok(await page.locator('#ics-del-btn').count() === 1, 'Settings: Entfernen-Button da');
 // Ohne vorheriges Anlegen: Hinweis statt Datei
 await page.click('#ics-del-btn');

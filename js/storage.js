@@ -18,7 +18,8 @@ window.Store = (function () {
         ruheVon: 21,         // Stunde
         ruheBis: 8,
         letzteEinheit: 0,    // Timestamp
-        themen: 'zufall'     // 'zufall' | 'zufallsdeck' | Array von Deck-IDs
+        themen: 'zufall',    // 'zufall' | 'zufallsdeck' | Array von Deck-IDs
+        icsSeq: 0            // steigende SEQUENCE, damit neue Exporte alte Termine ersetzen
       },
       einstellungen: { stimme: 'auto', tempo: 0.9, antwortmodus: 'tippen' },
       pakete: { aktiv: [], modus: 'ergaenzen' }
