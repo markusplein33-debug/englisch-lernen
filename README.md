@@ -23,12 +23,16 @@ Eine kleine Web-App zum Englischlernen: **Karteikarten mit Wiederholsystem, Quiz
 
 ## ⏰ Erinnerungen bei geschlossener App
 
-Web-Apps dürfen auf dem iPhone ohne eigenen Server keine Push-Nachrichten senden. Die Lösung ist die vorinstallierte Apple-App **Kurzbefehle**:
+Web-Apps dürfen auf dem iPhone ohne eigenen Server keine Push-Nachrichten senden. Es gibt zwei Wege:
+
+**Empfohlen – Kalender (auch stündlich):** In den Einstellungen der App auf **„📅 Erinnerungen in den Kalender legen"** tippen. Die App baut aus deinem Lernpensum automatisch eine Kalenderdatei mit allen Erinnerungszeiten (z. B. jede Stunde im Wachfenster). Mit **„🗑 Wieder entfernen"** lassen sich die Termine wieder stornieren.
+
+**Alternative – Kurzbefehle** (öffnet die App automatisch): Apple erlaubt in „Tageszeit"-Automationen **kein „stündlich"** – nur feste Uhrzeiten, und pro Uhrzeit eine eigene Automation. Lohnt sich daher nur bei wenigen Zeiten am Tag:
 
 1. Kurzbefehle-App öffnen → Tab **Automation** → **+**
-2. **Tageszeit** wählen, Uhrzeit(en) einstellen (z. B. 9:00, 12:00, 18:00) und **Sofort ausführen** aktivieren.
+2. **Tageszeit** wählen, **eine** Uhrzeit einstellen und **Sofort ausführen** aktivieren.
 3. Aktion **„App öffnen"** hinzufügen und **„Englisch"** auswählen.
-4. Fertig – das iPhone öffnet die Lern-App automatisch zur eingestellten Zeit.
+4. Für jede weitere Uhrzeit wiederholen.
 
 ## 🔧 Für später: Inhalte erweitern
 

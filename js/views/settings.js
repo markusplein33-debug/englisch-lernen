@@ -89,8 +89,9 @@
       '<button class="btn ghost" id="test-speech">🔊 Testen („Welcome to London!“)</button>' +
 
       '<h2 class="sect">Erinnerung bei geschlossener App</h2>' +
-      '<div class="statcard"><p class="note"><b>Automatisch per Kalender:</b> Ich baue dir aus deinen ' +
-      'Einstellungen oben fertige Kalender-Erinnerungen (<span id="zeiten-vorschau"></span>). ' +
+      '<div class="statcard"><p class="note"><b>Empfohlen – automatisch per Kalender (auch stündlich):</b> ' +
+      'Ich baue dir aus deinen Einstellungen oben fertige Kalender-Erinnerungen ' +
+      '(<span id="zeiten-vorschau"></span>). ' +
       'Nach dem Tipp auf den Button öffnet iOS die Datei – dort nur noch ' +
       '<b>„Zum Kalender hinzufügen“</b> bestätigen. iOS erinnert dich dann täglich von selbst.</p>' +
       '<div class="spacer"></div>' +
@@ -98,16 +99,19 @@
       '<button class="btn ghost" id="ics-del-btn">🗑 Wieder entfernen</button>' +
       '<p class="note" id="ics-status" style="margin-top:10px"></p></div>' +
       '<div class="statcard"><p class="note">' +
-      'Die App kann dich nur erinnern, solange sie geöffnet ist. Für Erinnerungen bei ' +
-      'geschlossener App nutze die vorinstallierte Apple-App <b>Kurzbefehle</b>:<br><br>' +
+      '<b>Alternative: Kurzbefehle</b> (öffnet die App automatisch zur Lernzeit). ' +
+      '⚠️ Apple erlaubt dort <b>kein „stündlich“</b> – nur feste Uhrzeiten, und für ' +
+      '<b>jede Uhrzeit eine eigene Automation</b>. Das lohnt sich also nur bei wenigen ' +
+      'Zeiten am Tag (z. B. 3× täglich). Für stündliche Erinnerungen nimm den ' +
+      'Kalender-Button oben – der legt automatisch alle Zeiten auf einmal an.<br><br>' +
+      'So geht es (einmal <b>pro Uhrzeit</b>):<br>' +
       '1. Kurzbefehle-App öffnen → Tab <b>Automation</b> → <b>+</b><br>' +
-      '2. <b>Tageszeit</b> wählen, Uhrzeit(en) einstellen (z. B. 9:00, 12:00, 18:00), ' +
-      '<b>Sofort ausführen</b> aktivieren<br>' +
+      '2. <b>Tageszeit</b> wählen, eine Uhrzeit einstellen, <b>Sofort ausführen</b> aktivieren<br>' +
       '3. Als Aktion <b>App öffnen</b> → „Englisch lernen“ wählen (oder Aktion „URL öffnen“ mit der App-Adresse)<br>' +
-      '4. Fertig – dein iPhone öffnet die App zur Lernzeit automatisch.<br><br>' +
+      '4. Für jede weitere Uhrzeit wiederholen.<br><br>' +
       'Deine Zeiten laut Einstellungen: <b><span id="zeiten-vorschau2"></span></b><br>' +
       '<i>Hinweis: Apple erlaubt Apps nicht, Kurzbefehle vollautomatisch zu installieren – ' +
-      'darum diese wenigen Schritte von Hand. Die Kalender-Lösung oben geht ohne.</i></p>' +
+      'darum diese Schritte von Hand. Die Kalender-Lösung oben geht ohne.</i></p>' +
       '<div class="spacer"></div>' +
       '<button class="btn ghost" id="shortcut-btn">⚡ Kurzbefehle-App öffnen</button></div>';
 
