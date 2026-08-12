@@ -202,6 +202,22 @@ await page.waitForSelector('#ics-btn', { timeout: 5000 });
 ok(await page.locator('#ics-btn').count() === 1, 'Settings: Kalender-Button da');
 ok(await page.locator('#shortcut-btn').count() === 1, 'Settings: Kurzbefehl-Button da');
 ok(((await page.locator('#zeiten-vorschau').textContent()) || '').includes(':00'), 'Settings: Zeiten-Vorschau berechnet');
+ok(await page.locator('#ics-del-btn').count() === 1, 'Settings: Entfernen-Button da');
+// Ohne vorheriges Anlegen: Hinweis statt Datei
+await page.click('#ics-del-btn');
+ok((await page.locator('#ics-status').textContent()).includes('noch keine'), 'Entfernen ohne Anlegen: Hinweis');
+// Anlegen merkt sich Termine, Entfernen erzeugt Storno-Datei (Download abfangen)
+const dl1 = page.waitForEvent('download');
+await page.click('#ics-btn');
+await dl1;
+ok(await page.evaluate(() => !!Store.load().pensum.kalender), 'Kalender-Anlage gemerkt');
+const dl2p = page.waitForEvent('download');
+await page.click('#ics-del-btn');
+const dl2 = await dl2p;
+const cancelPath = await dl2.path();
+const cancelIcs = fs.readFileSync(cancelPath, 'utf8');
+ok(cancelIcs.includes('METHOD:CANCEL') && cancelIcs.includes('STATUS:CANCELLED') &&
+   cancelIcs.includes('englisch-lernen-slot-0@'), 'Storno-ICS korrekt (CANCEL + UIDs)');
 
 // Statistik zeigt Balken
 await page.click('#tabbar .tab:nth-child(5)');

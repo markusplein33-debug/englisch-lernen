@@ -94,7 +94,9 @@
       'Nach dem Tipp auf den Button öffnet iOS die Datei – dort nur noch ' +
       '<b>„Zum Kalender hinzufügen“</b> bestätigen. iOS erinnert dich dann täglich von selbst.</p>' +
       '<div class="spacer"></div>' +
-      '<button class="btn" id="ics-btn">📅 Erinnerungen in den Kalender legen</button></div>' +
+      '<button class="btn" id="ics-btn">📅 Erinnerungen in den Kalender legen</button> ' +
+      '<button class="btn ghost" id="ics-del-btn">🗑 Wieder entfernen</button>' +
+      '<p class="note" id="ics-status" style="margin-top:10px"></p></div>' +
       '<div class="statcard"><p class="note">' +
       'Die App kann dich nur erinnern, solange sie geöffnet ist. Für Erinnerungen bei ' +
       'geschlossener App nutze die vorinstallierte Apple-App <b>Kurzbefehle</b>:<br><br>' +
@@ -198,35 +200,73 @@
       el.querySelector('#' + id).addEventListener('change', zeigeZeiten);
     });
 
-    el.querySelector('#ics-btn').addEventListener('click', function () {
-      var zeiten = erinnerungsZeiten();
+    function heuteStempel() {
+      var d = new Date();
+      return String(d.getFullYear()) + String(d.getMonth() + 1).padStart(2, '0') +
+        String(d.getDate()).padStart(2, '0');
+    }
+    // Baut die Kalenderdatei. cancel=true erzeugt eine Storno-Datei mit denselben
+    // Termin-IDs (UIDs) – der Kalender erkennt die Termine daran und entfernt sie.
+    function baueIcs(zeiten, datum, cancel) {
       var appUrl = location.origin + location.pathname;
-      var stamp = new Date();
-      var d = String(stamp.getFullYear()) +
-        String(stamp.getMonth() + 1).padStart(2, '0') +
-        String(stamp.getDate()).padStart(2, '0');
-      var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Englisch lernen//DE', 'CALSCALE:GREGORIAN'];
+      var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Englisch lernen//DE',
+        'CALSCALE:GREGORIAN', 'METHOD:' + (cancel ? 'CANCEL' : 'PUBLISH')];
       zeiten.forEach(function (z, i) {
         var hm = z.replace(':', '') + '00';
         ics.push('BEGIN:VEVENT',
-          'UID:englisch-lernen-' + i + '-' + d + '@markusplein33-debug.github.io',
-          'DTSTAMP:' + d + 'T000000Z',
-          'DTSTART:' + d + 'T' + hm,
+          'UID:englisch-lernen-slot-' + i + '@markusplein33-debug.github.io',
+          'DTSTAMP:' + heuteStempel() + 'T000000Z',
+          'DTSTART:' + datum + 'T' + hm,
           'DURATION:PT5M',
           'RRULE:FREQ=DAILY',
+          'SEQUENCE:' + (cancel ? '2' : '0'),
           'SUMMARY:📚 Englisch lernen (' + p.vokabeln + ' Vokabeln + ' + p.grammatik + ' Grammatik)',
           'DESCRIPTION:Lern-Einheit starten: ' + appUrl,
-          'URL:' + appUrl,
-          'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Englisch lernen!', 'TRIGGER:PT0S', 'END:VALARM',
-          'END:VEVENT');
+          'URL:' + appUrl);
+        if (cancel) ics.push('STATUS:CANCELLED');
+        else ics.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Englisch lernen!',
+          'TRIGGER:PT0S', 'END:VALARM');
+        ics.push('END:VEVENT');
       });
       ics.push('END:VCALENDAR');
-      var blob = new Blob([ics.join('\r\n')], { type: 'text/calendar' });
+      return ics.join('\r\n');
+    }
+    function ladeHerunter(inhalt, name) {
+      var blob = new Blob([inhalt], { type: 'text/calendar' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
-      a.href = url; a.download = 'englisch-erinnerungen.ics';
+      a.href = url; a.download = name;
       document.body.appendChild(a); a.click();
       setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+    }
+
+    el.querySelector('#ics-btn').addEventListener('click', function () {
+      var zeiten = erinnerungsZeiten();
+      var datum = heuteStempel();
+      // Merken, was angelegt wurde – damit „Entfernen" exakt dieselben Termine storniert.
+      s.pensum.kalender = { zeiten: zeiten, datum: datum };
+      Store.save();
+      ladeHerunter(baueIcs(zeiten, datum, false), 'englisch-erinnerungen.ics');
+      el.querySelector('#ics-status').innerHTML =
+        '💡 Tipp: Beim Hinzufügen als Kalender am besten einen eigenen (z. B. „Englisch") wählen – ' +
+        'dann lassen sich die Erinnerungen später auch komplett über die Kalender-App entfernen.';
+    });
+
+    el.querySelector('#ics-del-btn').addEventListener('click', function () {
+      var k = s.pensum.kalender;
+      if (!k || !k.zeiten || !k.zeiten.length) {
+        el.querySelector('#ics-status').textContent =
+          'Über diesen Button wurden noch keine Erinnerungen angelegt.';
+        return;
+      }
+      ladeHerunter(baueIcs(k.zeiten, k.datum, true), 'englisch-erinnerungen-entfernen.ics');
+      el.querySelector('#ics-status').innerHTML =
+        '🗑 Absage-Datei erstellt – öffnen und bestätigen, dann verschwinden die Termine. ' +
+        '<b>Falls dein iPhone die Absage nicht anbietet</b> (Apple unterstützt das nicht auf jedem Gerät): ' +
+        'Kalender-App → einen „📚 Englisch lernen"-Termin antippen → <b>Löschen</b> → ' +
+        '<b>„Alle zukünftigen Termine löschen"</b> (' + k.zeiten.length + '× wiederholen). ' +
+        'Oder – falls du beim Anlegen einen eigenen Kalender gewählt hast – Kalender-App → ' +
+        '„Kalender" → ⓘ neben „Englisch" → <b>Kalender löschen</b> (alles auf einmal).';
     });
 
     el.querySelector('#shortcut-btn').addEventListener('click', function () {
