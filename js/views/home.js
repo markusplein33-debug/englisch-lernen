@@ -40,6 +40,14 @@ Views.home = function (el) {
 
   html += '<div class="center"><p class="note">🕐 ' + letzteLektionText(s.letzteLektion) + '</p></div>';
 
+  if (Backup.istFaellig()) {
+    html += '<div class="statcard" id="backup-card"><p class="note">💾 <b>Sicherung fällig:</b> ' +
+      Backup.letzteText() + ' Dein Lernstand liegt nur auf diesem Gerät – ' +
+      'einmal tippen und er ist als Datei gesichert.</p>' +
+      '<button class="btn" id="backup-jetzt">💾 Jetzt als Datei sichern</button>' +
+      '<p class="note" id="backup-status" style="margin-top:8px"></p></div>';
+  }
+
   html += '<div class="tile-grid">' +
     '<div class="tile" data-go="#/karten"><span class="big">🃏</span>Karteikarten' +
       '<small>' + faelligKarten + ' fällig</small></div>' +
@@ -97,5 +105,12 @@ Views.home = function (el) {
   });
   var btn = el.querySelector('#start-session');
   if (btn) btn.addEventListener('click', function () { location.hash = '#/einheit'; });
+  var bkBtn = el.querySelector('#backup-jetzt');
+  if (bkBtn) bkBtn.addEventListener('click', function () {
+    Backup.exportDatei();
+    el.querySelector('#backup-status').textContent =
+      '✅ Datei erstellt – im Teilen-Dialog „In Dateien sichern" wählen.';
+    setTimeout(function () { Router.render(); }, 1500);
+  });
 };
 Router.register('home', Views.home);

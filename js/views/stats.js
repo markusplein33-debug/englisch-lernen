@@ -84,7 +84,9 @@
     html += '<h2 class="sect">Backup</h2>' +
       '<div class="statcard"><p class="note">Dein Fortschritt liegt nur auf diesem Gerät. ' +
       'Sichere ihn als Datei (z. B. in „Dateien" oder iCloud Drive) und stelle ihn ' +
-      'später – auch auf einem neuen iPhone – per Import wieder her.</p>' +
+      'später – auch auf einem neuen iPhone – per Import wieder her. ' +
+      'Die App erinnert dich auf der Startseite, wenn die letzte Sicherung älter als ' +
+      '7 Tage ist.<br><b>' + Backup.letzteText() + '</b></p>' +
       '<div class="spacer"></div>' +
       '<button class="btn" id="export">💾 Als Datei sichern</button> ' +
       '<button class="btn ghost" id="import">📂 Aus Datei wiederherstellen</button>' +
@@ -96,14 +98,7 @@
     var drill = el.querySelector('#drill');
     if (drill) drill.addEventListener('click', function () { location.hash = '#/einheit'; });
     el.querySelector('#export').addEventListener('click', function () {
-      var text = Store.exportJson();
-      var blob = new Blob([text], { type: 'application/json' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'englisch-backup-' + Store.heute() + '.json';
-      document.body.appendChild(a); a.click();
-      setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+      Backup.exportDatei();
       el.querySelector('#backup-status').textContent =
         '💾 Backup-Datei erstellt – beim iPhone im Teilen-Dialog „In Dateien sichern" wählen.';
     });

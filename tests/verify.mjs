@@ -275,6 +275,22 @@ await page.locator('#import-file').setInputFiles(backupPath);
 await page.waitForTimeout(400);
 const srsNachher = await page.evaluate(() => Object.keys(Store.load().srs).length);
 ok(srsNachher === srsVorher && srsVorher >= 1, 'Backup-Import: Lernstand wiederhergestellt');
+// Export hat den Backup-Zeitstempel gesetzt -> keine Erinnerung auf der Startseite
+ok(await page.evaluate(() => Store.load().letztesBackup > 0), 'Backup: Zeitstempel gesetzt');
+ok(await page.evaluate(() => !Backup.istFaellig()), 'Backup: nach Export nicht fällig');
+// Alte Sicherung + Fortschritt -> Erinnerungs-Kasten auf der Startseite
+await page.evaluate(() => {
+  const s = Store.load();
+  s.letztesBackup = Date.now() - 10 * 24 * 3600 * 1000;
+  Store.save();
+});
+await page.click('#tabbar .tab:nth-child(1)');
+await page.waitForSelector('#backup-card', { timeout: 5000 });
+ok(await page.locator('#backup-jetzt').count() === 1, 'Home: Backup-Erinnerung erscheint');
+const dlHomeP = page.waitForEvent('download');
+await page.click('#backup-jetzt');
+await dlHomeP;
+ok(await page.evaluate(() => !Backup.istFaellig()), 'Home: Ein-Tipp-Sicherung erledigt');
 
 // ---------- 3. Offline-Test ----------
 console.log('3) Offline');

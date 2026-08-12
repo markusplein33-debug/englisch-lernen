@@ -11,6 +11,7 @@ window.Store = (function () {
       grammatik: {},    // lektionId -> { geloest: {uebungId: true}, fehler: {uebungId: n}, fertig: bool }
       streak: {},       // 'YYYY-MM-DD' -> Anzahl erledigter Einheiten
       letzteLektion: 0, // Timestamp der zuletzt abgeschlossenen Lern-Einheit
+      letztesBackup: 0, // Timestamp der letzten Datei-Sicherung
       pensum: {
         intervallMin: 120,   // 0 = aus
         vokabeln: 10,
