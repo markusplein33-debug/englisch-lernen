@@ -93,11 +93,15 @@
           if (!ok) b.classList.add('wrong');
           if (ok) richtig++; else falsche.push(f);
           if (f.kartenId) SRS.bewerten(f.kartenId, ok);
-          if (f.sprich) Speech.speak(f.sprich);
           var fb = '<div class="explain">' + (ok ? '✅ Richtig! ' : '❌ ') +
-            (f.erklaerung || '') + '</div>' +
+            (f.erklaerung || '') +
+            (f.sprich ? ' <button class="iconbtn" id="q-sag" aria-label="Vorlesen" ' +
+              'style="color:var(--accent2);min-height:28px;font-size:18px">🔊</button>' : '') +
+            '</div>' +
             '<button class="btn big" id="next">Weiter →</button>';
           el.querySelector('#feedback').innerHTML = fb;
+          var qs = el.querySelector('#q-sag');
+          if (qs) qs.addEventListener('click', function () { Speech.speak(f.sprich); });
           el.querySelector('#next').addEventListener('click', function () { idx++; zeige(); });
         });
       });
