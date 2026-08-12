@@ -94,6 +94,21 @@ for (const [inp, ziel, stufe, stichwort] of gcases) {
   ok(r.stufe === stufe && r.hinweise.join(' ').includes(stichwort),
      `Grammatik: "${inp}" -> ${r.stufe} (${r.hinweise.join(' / ').slice(0, 60)})`);
 }
+// Artikel-Erklärungen mit Beispielen + Merksätze
+const rThe1 = P('hotel is nice', 'The hotel is nice.');
+ok(rThe1.hinweise.join(' ').includes('BESTIMMTE') && rThe1.hinweise.join(' ').includes('Beispiele'),
+   'Artikel fehlt: Regel + Beispiele erklärt');
+ok((rThe1.merksaetze || []).some(m => m.includes('The')), 'Artikel fehlt: Merksatz dabei');
+const rThe2 = P('I like the coffee', 'I like coffee.');
+ok(rThe2.hinweise.join(' ').includes('zu viel') && rThe2.hinweise.join(' ').includes('Beispiele'),
+   'Artikel zu viel: Regel + Beispiele erklärt');
+const rS = P('she work here', 'She works here.');
+ok((rS.merksaetze || []).some(m => m.includes('muss mit')), 'he/she/it: Merksatz „s muss mit“');
+// Zeitformen-Lexikon
+const zf = global.Grading.zeitformenHtml('Das ist Simple Past und Present Perfect.');
+ok(zf.includes('yesterday') && zf.includes('have/has') && zf.includes('Simple Past'),
+   'Zeitformen: Stichpunkte für erkannte Fachbegriffe');
+ok(global.Grading.zeitformenHtml('kein Fachbegriff hier') === '', 'Zeitformen: leer ohne Fachbegriff');
 delete global.window;
 
 // ---------- 2. Browser-Tests ----------

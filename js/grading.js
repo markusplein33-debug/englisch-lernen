@@ -228,10 +228,22 @@ window.Grading.pruefe = (function () {
     return out;
   }
 
+  // Merksätze zu den Regeln – werden mit Vorlese-Knopf angezeigt.
+  var MERKSAETZE = {
+    dritteS: 'he/she/it – das s muss mit!',
+    anVokal: 'Vor a, e, i, o, u sag „an“ dazu!',
+    theBestimmt: '„The“ nur, wenn klar ist, WELCHES gemeint ist!',
+    doHilft: 'Frage oder Verneinung? do, does, did – die helfen mit!',
+    svo: 'S-V-O: Subjekt, Verb, Objekt – so baut Englisch jeden Satz!',
+    irregular: 'Unregelmäßige Verben: zweite Form lernen statt -ed anhängen!'
+  };
+
   function grammatikHinweise(eingabe, ziel) {
     var te = tok(eingabe), tz = tok(ziel);
     var ops = diff(te, tz);
     var hinweise = [];
+    var merksaetze = [];
+    function merk(id) { if (merksaetze.indexOf(MERKSAETZE[id]) < 0) merksaetze.push(MERKSAETZE[id]); }
     var nurGrammatik = true;   // alle Abweichungen durch Regeln erklärbar?
     var abweichungen = 0;
 
@@ -246,21 +258,33 @@ window.Grading.pruefe = (function () {
         if ((zu === von + 's' || zu === von + 'es')) {
           var subj = null;
           for (var j = i - 1; j >= 0; j--) { if (ops[j][0] === '=') { subj = ops[j][1]; break; } }
-          hinweise.push('„' + von + '“ → „' + zu + '“: Bei he/she/it bekommt das Verb ein -s' +
-            (subj && PRONOMEN3[subj] ? ' (wegen „' + subj + '“)' : '') + '.');
+          if (subj && PRONOMEN3[subj]) {
+            hinweise.push('„' + von + '“ → „' + zu + '“: Bei he/she/it bekommt das Verb im Simple Present ' +
+              'ein -s (wegen „' + subj + '“).<br>Beispiele: I work → he work<b>s</b> · She like<b>s</b> tea.');
+            merk('dritteS');
+          } else {
+            hinweise.push('„' + von + '“ → „' + zu + '“: Bei he/she/it bekommt das Verb ein -s – ' +
+              'oder hier fehlt das Plural-s.<br>Beispiele: he work<b>s</b> · two ticket<b>s</b>.');
+          }
           erklaert = true;
         }
         // unregelmäßige Vergangenheit
         else if (IRREGULAR[von] === zu) {
-          hinweise.push('„' + von + '“ → „' + zu + '“: Unregelmäßiges Verb – die Vergangenheitsform heißt „' + zu + '“.');
+          hinweise.push('„' + von + '“ → „' + zu + '“: Unregelmäßiges Verb – die Vergangenheitsform ' +
+            '(Simple Past) heißt „' + zu + '“.<br>Beispiele: go → went · buy → bought · eat → ate.');
+          merk('irregular');
           erklaert = true;
         }
         // a/an
         else if (von === 'a' && zu === 'an') {
-          hinweise.push('„a“ → „an“: Vor Vokal (a, e, i, o, u) heißt es „an“.');
+          hinweise.push('„a“ → „an“: Vor Vokal (a, e, i, o, u) heißt es „an“.<br>' +
+            'Beispiele: an apple, an egg – aber: a car, a hotel.');
+          merk('anVokal');
           erklaert = true;
         } else if (von === 'an' && zu === 'a') {
-          hinweise.push('„an“ → „a“: Vor Konsonant heißt es „a“.');
+          hinweise.push('„an“ → „a“: Vor Konsonant heißt es „a“.<br>' +
+            'Beispiele: a car, a hotel – aber: an apple, an egg.');
+          merk('anVokal');
           erklaert = true;
         }
         // Plural-s
@@ -275,19 +299,38 @@ window.Grading.pruefe = (function () {
       }
       if (typ === '+') {
         if (zu === 'do' || zu === 'does' || zu === 'did') {
-          hinweise.push('Es fehlt das Hilfsverb „' + zu + '“: Fragen und Verneinungen brauchen do/does/did (z. B. „Where do you live?“).');
+          hinweise.push('Es fehlt das Hilfsverb „' + zu + '“: Fragen und Verneinungen brauchen ' +
+            'do/does/did.<br>Beispiele: Where <b>do</b> you live? · <b>Does</b> she work? · ' +
+            'I <b>did</b> not see it.');
+          merk('doHilft');
           erklaert = true;
-        } else if (zu === 'the' || zu === 'a' || zu === 'an') {
-          hinweise.push('Es fehlt der Artikel „' + zu + '“.');
+        } else if (zu === 'the') {
+          hinweise.push('Es fehlt der Artikel „the“: „the“ steht, wenn eine ganz BESTIMMTE Sache ' +
+            'gemeint ist – beide wissen, welche.<br>Beispiele: <b>The</b> hotel is nice. (genau dieses ' +
+            'Hotel) · Where is <b>the</b> station? (die eine Station hier)');
+          merk('theBestimmt');
+          erklaert = true;
+        } else if (zu === 'a' || zu === 'an') {
+          hinweise.push('Es fehlt der Artikel „' + zu + '“: „a/an“ steht bei einer neuen oder ' +
+            'beliebigen Sache – wie deutsch „ein/eine“.<br>Beispiele: I need <b>a</b> taxi. (irgendein ' +
+            'Taxi) · She has <b>an</b> idea.');
           erklaert = true;
         } else if (zu === 'to') {
-          hinweise.push('Es fehlt das Wörtchen „to“ (z. B. „I would like to …“).');
+          hinweise.push('Es fehlt das Wörtchen „to“.<br>Beispiele: I would like <b>to</b> pay. · ' +
+            'We want <b>to</b> go home.');
           erklaert = true;
         }
       }
       if (typ === '-') {
-        if (von === 'the' || von === 'a' || von === 'an') {
-          hinweise.push('Der Artikel „' + von + '“ ist hier zu viel.');
+        if (von === 'the') {
+          hinweise.push('Der Artikel „the“ ist hier zu viel: Kein „the“ bei allgemeinen Aussagen ' +
+            'und vielen festen Wendungen.<br>Beispiele: I like coffee. (nicht: the coffee) · ' +
+            'She speaks English. · We are at home.');
+          merk('theBestimmt');
+          erklaert = true;
+        } else if (von === 'a' || von === 'an') {
+          hinweise.push('Der Artikel „' + von + '“ ist hier zu viel – z. B. nicht vor Mehrzahl oder ' +
+            'nicht zählbaren Dingen.<br>Beispiele: I like music. · We need information. · They are doctors.');
           erklaert = true;
         }
       }
@@ -298,23 +341,87 @@ window.Grading.pruefe = (function () {
     if (!hinweise.length && abweichungen > 0) {
       var se = te.slice().sort().join(' '), sz = tz.slice().sort().join(' ');
       if (se === sz) {
-        hinweise.push('Alle Wörter stimmen, aber die Satzstellung nicht. Im Englischen gilt meist: Subjekt – Verb – Objekt.');
+        hinweise.push('Alle Wörter stimmen, aber die Satzstellung nicht. Im Englischen gilt meist: ' +
+          'Subjekt – Verb – Objekt.<br>Beispiel: <b>I</b> (Subjekt) <b>would like</b> (Verb) ' +
+          '<b>a coffee</b> (Objekt).');
+        merk('svo');
         nurGrammatik = true;
       }
     }
 
-    return { hinweise: hinweise, nurGrammatik: nurGrammatik && hinweise.length > 0 };
+    return { hinweise: hinweise, merksaetze: merksaetze, nurGrammatik: nurGrammatik && hinweise.length > 0 };
   }
 
   // Gesamtprüfung: kombiniert Stufen-Bewertung mit Grammatik-Erklärungen.
   return function (eingabe, ziel, alternativen) {
     var stufe = G.bewerte(eingabe, ziel, alternativen);
     var gr = grammatikHinweise(eingabe, ziel);
-    if (stufe === 'richtig') return { stufe: 'richtig', hinweise: [] };
+    // Artikel & Co. sind Füllwörter für die Sinn-Bewertung – aber ein echter
+    // Grammatikfehler: Wenn die Antwort nur deshalb als „richtig" gilt und die
+    // Abweichung per Regel erklärbar ist, stufen wir auf 'grammatik' herab.
+    if (stufe === 'richtig') {
+      var exakt = [ziel].concat(alternativen || []).some(function (z) {
+        return G.normalize(eingabe) === G.normalize(z);
+      });
+      if (!exakt && gr.nurGrammatik) {
+        return { stufe: 'grammatik', hinweise: gr.hinweise, merksaetze: gr.merksaetze };
+      }
+      return { stufe: 'richtig', hinweise: [], merksaetze: [] };
+    }
     // Inhalt eigentlich falsch/sinn, aber alle Abweichungen grammatisch erklärbar -> Stufe 'grammatik'
     if (gr.nurGrammatik && (stufe === 'falsch' || stufe === 'sinn' || stufe === 'schreib')) {
-      return { stufe: 'grammatik', hinweise: gr.hinweise };
+      return { stufe: 'grammatik', hinweise: gr.hinweise, merksaetze: gr.merksaetze };
     }
-    return { stufe: stufe, hinweise: gr.hinweise };
+    return { stufe: stufe, hinweise: gr.hinweise, merksaetze: gr.merksaetze };
+  };
+})();
+
+// ===== Zeitformen-Lexikon: erklärt Fachbegriffe in Stichpunkten =====
+window.Grading.zeitformenHtml = (function () {
+  var ZEITFORMEN = [
+    { name: 'Simple Present', auch: [], punkte: [
+      'Gegenwart für Gewohnheiten und Fakten – „so ist es immer/regelmäßig“',
+      'Signalwörter: always, often, every day',
+      'Bildung: Grundform des Verbs – bei he/she/it mit -s (she works)'] },
+    { name: 'Present Progressive', auch: ['present continuous'], punkte: [
+      'Gegenwart für das, was GERADE JETZT passiert',
+      'Signalwörter: now, at the moment, Look!',
+      'Bildung: am/is/are + Verb-ing (I am working)'] },
+    { name: 'Simple Past', auch: [], punkte: [
+      'Vergangenheit für abgeschlossene Dinge – „vorbei und erledigt“',
+      'Signalwörter: yesterday, last week, in 2020, ago',
+      'Bildung: Verb + -ed – oder 2. Form bei unregelmäßigen Verben (went, bought)'] },
+    { name: 'Present Perfect', auch: [], punkte: [
+      'Brücke zwischen Vergangenheit und Jetzt – das Ergebnis zählt heute noch',
+      'Signalwörter: just, already, yet, ever, never',
+      'Bildung: have/has + 3. Form (I have bought)'] },
+    { name: 'Past Progressive', auch: ['past continuous'], punkte: [
+      'Verlauf in der Vergangenheit – „war gerade dabei, als …“',
+      'Signalwörter: while, when',
+      'Bildung: was/were + Verb-ing (I was working)'] },
+    { name: 'Will-Future', auch: ['will future'], punkte: [
+      'Zukunft für Vorhersagen und spontane Entscheidungen',
+      'Signalwörter: tomorrow, next week, I think …',
+      'Bildung: will + Grundform (I will help)'] },
+    { name: 'Going-to-Future', auch: ['going to'], punkte: [
+      'Zukunft für Pläne und feste Absichten',
+      'Typisch: der Plan steht schon fest',
+      'Bildung: am/is/are going to + Grundform (We are going to visit)'] }
+  ];
+
+  // Sucht Zeitform-Fachbegriffe im Text und liefert Stichpunkt-Kästen als HTML.
+  return function (text) {
+    var lower = (text || '').toLowerCase();
+    var html = '';
+    ZEITFORMEN.forEach(function (z) {
+      var namen = [z.name.toLowerCase()].concat(z.auch);
+      var trifft = namen.some(function (n) { return lower.indexOf(n) >= 0; });
+      if (trifft) {
+        html += '<div class="explain" style="border-left-color:var(--accent2)">📌 <b>' + z.name +
+          '</b> – kurz erklärt:<br>' +
+          z.punkte.map(function (p) { return '• ' + p; }).join('<br>') + '</div>';
+      }
+    });
+    return html;
   };
 })();

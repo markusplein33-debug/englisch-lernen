@@ -121,14 +121,27 @@
         var warum = '';
         if (erg.hinweise && erg.hinweise.length) {
           warum = '<div class="explain" style="border-left-color:var(--warn)"><b>Warum?</b><br>' +
-            erg.hinweise.join('<br>') + '</div>';
+            erg.hinweise.join('<br><br>') + '</div>';
         }
+        if (erg.merksaetze && erg.merksaetze.length) {
+          warum += erg.merksaetze.map(function (m, mi) {
+            return '<div class="explain" style="border-left-color:var(--ok)">🧠 <b>Merksatz:</b> ' + m + ' ' +
+              '<button class="iconbtn merk-sag" data-mi="' + mi + '" ' +
+              'style="color:var(--accent2);min-height:28px;font-size:18px" aria-label="Merksatz vorlesen">🔊</button></div>';
+          }).join('');
+        }
+        warum += Grading.zeitformenHtml(erg.hinweise ? erg.hinweise.join(' ') : '');
         el.querySelector('#feedback').innerHTML =
           '<div class="explain">' + text +
           ' <button class="iconbtn" style="color:var(--accent2);min-height:28px;font-size:18px" id="sag" aria-label="Vorlesen">🔊</button></div>' +
           warum +
           '<button class="btn big" id="next">Weiter →</button>';
         el.querySelector('#sag').addEventListener('click', function () { Speech.speak(k.en); });
+        el.querySelectorAll('.merk-sag').forEach(function (b) {
+          b.addEventListener('click', function () {
+            Speech.speakDe(erg.merksaetze[parseInt(b.getAttribute('data-mi'), 10)]);
+          });
+        });
         var nb = el.querySelector('#next');
         nb.addEventListener('click', function () { idx++; umgedreht = false; zeige(); });
         nb.focus();

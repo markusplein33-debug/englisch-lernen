@@ -37,5 +37,26 @@ window.Speech = (function () {
     warmedUp = true;
   }
 
-  return { speak: speak };
+  // Deutsche Ausgabe für Merksätze und Erklärungen.
+  var voiceDe = null;
+  function pickVoiceDe() {
+    if (!('speechSynthesis' in window)) return null;
+    var voices = speechSynthesis.getVoices() || [];
+    for (var i = 0; i < voices.length; i++) {
+      if (voices[i].lang && voices[i].lang.indexOf('de') === 0) return voices[i];
+    }
+    return null;
+  }
+  function speakDe(text) {
+    if (!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    if (!voiceDe) voiceDe = pickVoiceDe();
+    if (voiceDe) u.voice = voiceDe;
+    u.lang = (voiceDe && voiceDe.lang) || 'de-DE';
+    u.rate = (Store.load().einstellungen.tempo) || 0.9;
+    speechSynthesis.speak(u);
+  }
+
+  return { speak: speak, speakDe: speakDe };
 })();

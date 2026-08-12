@@ -126,6 +126,7 @@
         else text = '❌ Richtig wäre: „' + richtigText + '“. ';
         el.querySelector('#feedback').innerHTML =
           '<div class="explain">' + text + (u.erklaerung || '') + '</div>' +
+          Grading.zeitformenHtml(l.titel + ' ' + (u.erklaerung || '')) +
           '<button class="btn big" id="next">Weiter →</button>';
         el.querySelector('#next').addEventListener('click', function () { done(erg); });
       }
