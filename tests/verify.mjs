@@ -109,6 +109,12 @@ const zf = global.Grading.zeitformenHtml('Das ist Simple Past und Present Perfec
 ok(zf.includes('yesterday') && zf.includes('have/has') && zf.includes('Simple Past'),
    'Zeitformen: Stichpunkte für erkannte Fachbegriffe');
 ok(global.Grading.zeitformenHtml('kein Fachbegriff hier') === '', 'Zeitformen: leer ohne Fachbegriff');
+// Sinngemäß: konkrete Unterschiede werden erklärt
+const rSinn = P("could I get a call for standing up at seven o'clock?", 'Could I have a wake-up call at seven, please?');
+ok(rSinn.stufe === 'sinn' && rSinn.hinweise.join(' ').includes('wake up call'),
+   'Sinngemäß: Unterschiede zur Musterlösung erklärt');
+const rSyn = P('Where is the toilet?', 'Where is the restroom?');
+ok(rSyn.hinweise.length === 0, 'Sinngemäß: reine Synonyme werden nicht angekreidet');
 delete global.window;
 
 // ---------- 2. Browser-Tests ----------

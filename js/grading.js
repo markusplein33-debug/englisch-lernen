@@ -175,7 +175,8 @@ window.Grading = (function () {
     return beste;
   }
 
-  return { bewerte: bewerte, vergleiche: vergleiche, normalize: normalize, levenshtein: levenshtein };
+  return { bewerte: bewerte, vergleiche: vergleiche, normalize: normalize, levenshtein: levenshtein,
+           synonym: function (w) { return SYN[w] || w; } };
 })();
 
 // ===== Grammatik-Checker: erkennt typische Fehler und erklärt sie auf Deutsch =====
@@ -335,6 +336,46 @@ window.Grading.pruefe = (function () {
         }
       }
       if (!erklaert) nurGrammatik = false;
+      op._erklaert = erklaert;
+    }
+
+    // Generische Unterschiede (Wortgruppen), für „sinngemäß“-Feedback:
+    // aufeinanderfolgende Abweichungen zusammenfassen, Synonyme überspringen.
+    var unterschiede = [];
+    var runVon = [], runZu = [], runErklaert = true, runSynonym = true;
+    function runAbschliessen() {
+      if ((runVon.length || runZu.length) && !runErklaert && !runSynonym) {
+        if (runVon.length && runZu.length) {
+          unterschiede.push('Statt „' + runVon.join(' ') + '“ heißt es hier „' + runZu.join(' ') + '“.');
+        } else if (runZu.length) {
+          unterschiede.push('„' + runZu.join(' ') + '“ fehlt in deiner Antwort.');
+        } else {
+          unterschiede.push('„' + runVon.join(' ') + '“ brauchst du hier nicht.');
+        }
+      }
+      runVon = []; runZu = []; runErklaert = true; runSynonym = true;
+    }
+    for (i = 0; i < ops.length; i++) {
+      var o = ops[i];
+      if (o[0] === '=') {
+        // Einzelnes gleiches Wort zwischen zwei Abweichungen? Mit in die Gruppe
+        // nehmen, damit zusammenhängende Ausdrücke nicht zerrissen werden.
+        var naechsteWeicht = i + 1 < ops.length && ops[i + 1][0] !== '=';
+        if ((runVon.length || runZu.length) && naechsteWeicht) {
+          runVon.push(o[1]); runZu.push(o[2]);
+        } else runAbschliessen();
+        continue;
+      }
+      if (o[1]) runVon.push(o[1]);
+      if (o[2]) runZu.push(o[2]);
+      if (!o._erklaert) runErklaert = false;
+      var syn = o[0] === '~' && G.synonym(o[1]) === G.synonym(o[2]);
+      if (!syn) runSynonym = false;
+    }
+    runAbschliessen();
+    if (unterschiede.length > 4) {
+      unterschiede = unterschiede.slice(0, 4);
+      unterschiede.push('… und weitere kleine Unterschiede.');
     }
 
     // Gleiche Wörter, andere Reihenfolge?
@@ -349,7 +390,8 @@ window.Grading.pruefe = (function () {
       }
     }
 
-    return { hinweise: hinweise, merksaetze: merksaetze, nurGrammatik: nurGrammatik && hinweise.length > 0 };
+    return { hinweise: hinweise, merksaetze: merksaetze, unterschiede: unterschiede,
+             nurGrammatik: nurGrammatik && hinweise.length > 0 };
   }
 
   // Gesamtprüfung: kombiniert Stufen-Bewertung mit Grammatik-Erklärungen.
@@ -372,7 +414,12 @@ window.Grading.pruefe = (function () {
     if (gr.nurGrammatik && (stufe === 'falsch' || stufe === 'sinn' || stufe === 'schreib')) {
       return { stufe: 'grammatik', hinweise: gr.hinweise, merksaetze: gr.merksaetze };
     }
-    return { stufe: stufe, hinweise: gr.hinweise, merksaetze: gr.merksaetze };
+    var hinweise = gr.hinweise;
+    // Sinngemäß/Rechtschreibung: zusätzlich die konkreten Unterschiede zeigen
+    if ((stufe === 'sinn' || stufe === 'schreib') && gr.unterschiede.length) {
+      hinweise = hinweise.concat(gr.unterschiede);
+    }
+    return { stufe: stufe, hinweise: hinweise, merksaetze: gr.merksaetze };
   };
 })();
 
