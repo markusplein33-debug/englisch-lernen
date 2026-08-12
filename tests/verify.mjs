@@ -245,6 +245,21 @@ await page.click('#tabbar .tab:nth-child(5)');
 await page.waitForSelector('.statcard', { timeout: 5000 });
 ok(await page.locator('.progressbar').count() > 10, 'Statistik: Fortschrittsbalken gerendert');
 
+// Backup: Export als Datei, Import aus Datei stellt Zustand wieder her
+const dlBackupP = page.waitForEvent('download');
+await page.click('#export');
+const dlBackup = await dlBackupP;
+const backupPath = await dlBackup.path();
+const backupJson = JSON.parse(fs.readFileSync(backupPath, 'utf8'));
+ok(backupJson.version === 1 && backupJson.srs, 'Backup-Export: gültige JSON-Datei');
+ok((dlBackup.suggestedFilename() || '').startsWith('englisch-backup-'), 'Backup-Export: Dateiname');
+const srsVorher = await page.evaluate(() => Object.keys(Store.load().srs).length);
+await page.evaluate(() => { const s = Store.load(); s.srs = {}; Store.save(); });
+await page.locator('#import-file').setInputFiles(backupPath);
+await page.waitForTimeout(400);
+const srsNachher = await page.evaluate(() => Object.keys(Store.load().srs).length);
+ok(srsNachher === srsVorher && srsVorher >= 1, 'Backup-Import: Lernstand wiederhergestellt');
+
 // ---------- 3. Offline-Test ----------
 console.log('3) Offline');
 await ctx.setOffline(true);

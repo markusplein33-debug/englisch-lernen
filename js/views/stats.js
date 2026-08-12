@@ -83,10 +83,13 @@
     // Backup
     html += '<h2 class="sect">Backup</h2>' +
       '<div class="statcard"><p class="note">Dein Fortschritt liegt nur auf diesem Gerät. ' +
-      'Mit Export kannst du ihn sichern (in die Zwischenablage) und später wieder importieren.</p>' +
+      'Sichere ihn als Datei (z. B. in „Dateien" oder iCloud Drive) und stelle ihn ' +
+      'später – auch auf einem neuen iPhone – per Import wieder her.</p>' +
       '<div class="spacer"></div>' +
-      '<button class="btn ghost" id="export">Exportieren</button> ' +
-      '<button class="btn ghost" id="import">Importieren</button></div>';
+      '<button class="btn" id="export">💾 Als Datei sichern</button> ' +
+      '<button class="btn ghost" id="import">📂 Aus Datei wiederherstellen</button>' +
+      '<input type="file" id="import-file" accept=".json,application/json" style="display:none">' +
+      '<p class="note" id="backup-status" style="margin-top:8px"></p></div>';
 
     el.innerHTML = html;
 
@@ -94,17 +97,31 @@
     if (drill) drill.addEventListener('click', function () { location.hash = '#/einheit'; });
     el.querySelector('#export').addEventListener('click', function () {
       var text = Store.exportJson();
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(function () {
-          alert('Fortschritt in die Zwischenablage kopiert. Speichere ihn z. B. in einer Notiz.');
-        }, function () { prompt('Backup kopieren:', text); });
-      } else { prompt('Backup kopieren:', text); }
+      var blob = new Blob([text], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'englisch-backup-' + Store.heute() + '.json';
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+      el.querySelector('#backup-status').textContent =
+        '💾 Backup-Datei erstellt – beim iPhone im Teilen-Dialog „In Dateien sichern" wählen.';
     });
-    el.querySelector('#import').addEventListener('click', function () {
-      var text = prompt('Backup-Text hier einfügen:');
-      if (!text) return;
-      try { Store.importJson(text); alert('Import erfolgreich!'); Router.render(); }
-      catch (e) { alert('Import fehlgeschlagen: ' + e.message); }
+    var dateiFeld = el.querySelector('#import-file');
+    el.querySelector('#import').addEventListener('click', function () { dateiFeld.click(); });
+    dateiFeld.addEventListener('change', function () {
+      var datei = dateiFeld.files && dateiFeld.files[0];
+      if (!datei) return;
+      var leser = new FileReader();
+      leser.onload = function () {
+        try {
+          Store.importJson(String(leser.result));
+          alert('Import erfolgreich – dein Lernstand ist wiederhergestellt!');
+          Router.render();
+        } catch (e) { alert('Import fehlgeschlagen: ' + e.message); }
+      };
+      leser.onerror = function () { alert('Datei konnte nicht gelesen werden.'); };
+      leser.readAsText(datei);
     });
   };
   Router.register('statistik', Views.stats);
