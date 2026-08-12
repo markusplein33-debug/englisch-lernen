@@ -4,16 +4,28 @@
   function themen(el) {
     Router.setTitle('Quiz');
     var s = Store.load();
+    var alle = APP_DATA.sichtbareDecks();
+    var basis = alle.filter(function (d) { return APP_DATA.istBasis(d); });
+    var erweiterungen = alle.filter(function (d) { return !APP_DATA.istBasis(d); });
+    var getrennt = APP_DATA.paketModus() === 'einzeln' && erweiterungen.length > 0;
     var html = '<div class="list">';
-    APP_DATA.quizzes.forEach(function (q) {
+    APP_DATA.sichtbareQuizzes().forEach(function (q) {
       var st = s.quiz['thema-' + q.id];
       html += zeile('thema-' + q.id, q.emoji || '🧳', q.titel, q.fragen.length + ' Fragen', st);
     });
-    APP_DATA.decks.forEach(function (d) {
+    (getrennt ? basis : alle).forEach(function (d) {
       var st = s.quiz['deck-' + d.id];
       html += zeile('deck-' + d.id, d.emoji, d.titel, 'Vokabel-Quiz', st);
     });
     html += '</div>';
+    if (getrennt) {
+      html += '<h2 class="sect">🧩 Erweiterungen</h2><div class="list">';
+      erweiterungen.forEach(function (d) {
+        var st = s.quiz['deck-' + d.id];
+        html += zeile('deck-' + d.id, d.emoji, d.titel, 'Vokabel-Quiz', st);
+      });
+      html += '</div>';
+    }
     el.innerHTML = html;
     el.querySelectorAll('[data-quiz]').forEach(function (r) {
       r.addEventListener('click', function () {

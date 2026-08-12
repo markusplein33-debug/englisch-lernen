@@ -29,8 +29,8 @@ for (const d of registered.decks) for (const k of d.karten) {
   if (ids.has(k.id)) dupes++; else ids.add(k.id);
   if (!k.en || !k.de || !['wort', 'satz'].includes(k.typ)) badMc++;
 }
-ok(registered.decks.length === 8, `8 Decks vorhanden (${registered.decks.length})`);
-ok(cards >= 380, `>=380 Karten (${cards})`);
+ok(registered.decks.length === 12, `12 Decks vorhanden (${registered.decks.length})`);
+ok(cards >= 560, `>=560 Karten (${cards})`);
 ok(dupes === 0, `Karten-IDs eindeutig (${dupes} Duplikate)`);
 ok(badMc === 0, `Kartenfelder vollständig (${badMc} defekt)`);
 let mcBad = 0, exIds = new Set(), exDupes = 0;
@@ -39,7 +39,7 @@ for (const l of registered.lessons) for (const u of l.uebungen) {
   if (u.typ === 'mc' && (u.optionen.length !== 4 || u.richtig < 0 || u.richtig > 3)) mcBad++;
   if (u.typ === 'luecke' && (!Array.isArray(u.antwort) || !u.antwort.length)) mcBad++;
 }
-ok(registered.lessons.length === 10, `10 Lektionen (${registered.lessons.length})`);
+ok(registered.lessons.length === 14, `14 Lektionen (${registered.lessons.length})`);
 ok(exDupes === 0 && mcBad === 0, `Übungen valide (${exDupes} Dup., ${mcBad} defekt)`);
 for (const q of registered.quizzes) {
   const bad = q.fragen.filter(f => f.optionen.length !== 4 || f.richtig < 0 || f.richtig > 3).length;
@@ -167,7 +167,28 @@ const zielDe = await page.locator('.flashcard .word').textContent();
 await page.fill('#antwort', 'xyz komplett falsch');
 await page.click('#check');
 await page.waitForSelector('#feedback .explain', { timeout: 5000 });
-ok((await page.locator('#feedback .explain').textContent()).includes('Lösung'), 'Session: Falsch-Feedback mit Lösung');
+ok((await page.locator('#feedback .explain').first().textContent()).includes('Lösung'), 'Session: Falsch-Feedback mit Lösung');
+
+// Erweiterungspakete: aktivieren (ergaenzen) -> Deck sichtbar; einzeln -> Sektion + Basis-Pool
+ok(await page.evaluate(() => APP_DATA.sichtbareDecks().length) === 8, 'Standard: 8 sichtbare Decks');
+await page.evaluate(() => {
+  const s = Store.load();
+  s.pakete.aktiv = ['essen', 'grammatik2'];
+  s.pakete.modus = 'ergaenzen';
+  Store.save();
+});
+await page.waitForTimeout(250);
+ok(await page.evaluate(() => APP_DATA.sichtbareDecks().length) === 9, 'Paket aktiv: 9 sichtbare Decks');
+ok(await page.evaluate(() => APP_DATA.sichtbareLessons().length) === 14, 'Grammatik-Paket aktiv: 14 Lektionen');
+ok(await page.evaluate(() => Pensum.aktiveDecks().includes('essen')), 'ergaenzen: Erweiterung im Einheiten-Pool');
+await page.evaluate(() => { const s = Store.load(); s.pakete.modus = 'einzeln'; Store.save(); });
+await page.waitForTimeout(250);
+ok(await page.evaluate(() => !Pensum.aktiveDecks().includes('essen')), 'einzeln: Pool bleibt Basis');
+await page.click('#tabbar .tab:nth-child(2)');
+await page.waitForSelector('.rowcard', { timeout: 5000 });
+ok((await page.locator('#view .sect').count()) >= 1, 'einzeln: Erweiterungs-Sektion in Kartenliste');
+ok(await page.locator('.rowcard').count() === 9, 'Kartenliste zeigt 9 Decks (8 Basis + 1 Erweiterung)');
+await page.evaluate(() => { const s = Store.load(); s.pakete.aktiv = []; s.pakete.modus = 'ergaenzen'; Store.save(); });
 
 // Home: Stand-Fußzeile + Refresh-Button
 await page.click('#tabbar .tab:nth-child(1)');

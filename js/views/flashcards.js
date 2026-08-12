@@ -3,8 +3,13 @@
 
   function deckListe(el) {
     Router.setTitle('Karteikarten');
+    var alle = APP_DATA.sichtbareDecks();
+    var basis = alle.filter(function (d) { return APP_DATA.istBasis(d); });
+    var erweiterungen = alle.filter(function (d) { return !APP_DATA.istBasis(d); });
+    var getrennt = APP_DATA.paketModus() === 'einzeln' && erweiterungen.length > 0;
     var html = '<div class="list">';
-    APP_DATA.decks.forEach(function (d) {
+    var reihen = getrennt ? basis : alle;
+    reihen.forEach(function (d) {
       var v = SRS.verteilung(d.id);
       var gesamt = d.karten.length;
       var due = SRS.faellig(d.id).length;
@@ -15,6 +20,20 @@
         balken(v, gesamt) + '</div><span class="chev">›</span></div>';
     });
     html += '</div>';
+    if (getrennt) {
+      html += '<h2 class="sect">🧩 Erweiterungen</h2><div class="list">';
+      erweiterungen.forEach(function (d) {
+        var v = SRS.verteilung(d.id);
+        var gesamt = d.karten.length;
+        var due = SRS.faellig(d.id).length;
+        html += '<div class="rowcard" data-deck="' + d.id + '">' +
+          '<span class="emoji">' + d.emoji + '</span>' +
+          '<div class="grow"><h3>' + d.titel + '</h3>' +
+          '<small>' + gesamt + ' Karten · ' + due + ' fällig</small>' +
+          balken(v, gesamt) + '</div><span class="chev">›</span></div>';
+      });
+      html += '</div>';
+    }
     el.innerHTML = html;
     el.querySelectorAll('[data-deck]').forEach(function (r) {
       r.addEventListener('click', function () {

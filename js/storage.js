@@ -19,7 +19,8 @@ window.Store = (function () {
         letzteEinheit: 0,    // Timestamp
         themen: 'zufall'     // 'zufall' | 'zufallsdeck' | Array von Deck-IDs
       },
-      einstellungen: { stimme: 'auto', tempo: 0.9, antwortmodus: 'tippen' }
+      einstellungen: { stimme: 'auto', tempo: 0.9, antwortmodus: 'tippen' },
+      pakete: { aktiv: [], modus: 'ergaenzen' }
     };
   };
 
@@ -40,6 +41,9 @@ window.Store = (function () {
     Object.keys(d.einstellungen).forEach(function (k) {
       if (state.einstellungen[k] === undefined) state.einstellungen[k] = d.einstellungen[k];
     });
+    if (!state.pakete) state.pakete = d.pakete;
+    if (!Array.isArray(state.pakete.aktiv)) state.pakete.aktiv = [];
+    if (!state.pakete.modus) state.pakete.modus = 'ergaenzen';
     return state;
   }
 

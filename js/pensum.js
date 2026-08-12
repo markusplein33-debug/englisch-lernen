@@ -30,18 +30,29 @@ window.Pensum = (function () {
     return new Date(basis + p.intervallMin * 60000);
   }
 
-  // Deck-Auswahl laut Einstellung pensum.themen
+  // Deck-Auswahl laut Einstellung pensum.themen und Paket-Modus:
+  // 'ergaenzen' -> Basis + aktivierte Erweiterungen im Pool,
+  // 'einzeln'   -> automatischer Pool nur Basis (explizite Themenwahl darf mehr).
+  function poolDecks() {
+    var sichtbar = APP_DATA.sichtbareDecks();
+    if (APP_DATA.paketModus() === 'einzeln') {
+      sichtbar = sichtbar.filter(function (d) { return APP_DATA.istBasis(d); });
+    }
+    return sichtbar.map(function (d) { return d.id; });
+  }
   function aktiveDecks() {
     var t = Store.load().pensum.themen || 'zufall';
-    var alle = APP_DATA.decks.map(function (d) { return d.id; });
-    if (t === 'zufall') return alle;
+    var pool = poolDecks();
+    var sichtbar = APP_DATA.sichtbareDecks().map(function (d) { return d.id; });
+    if (t === 'zufall') return pool;
     if (t === 'zufallsdeck') {
-      return [alle[Math.floor(Math.random() * alle.length)]];
+      return [pool[Math.floor(Math.random() * pool.length)]];
     }
     if (Array.isArray(t) && t.length) {
-      return t.filter(function (id) { return alle.indexOf(id) >= 0; });
+      var gewaehlt = t.filter(function (id) { return sichtbar.indexOf(id) >= 0; });
+      return gewaehlt.length ? gewaehlt : pool;
     }
-    return alle;
+    return pool;
   }
 
   // Gemischte Session: fällige Karten (bevorzugt) + Grammatikübungen aus schwachen Lektionen.
@@ -65,7 +76,10 @@ window.Pensum = (function () {
 
     // Grammatik: Übungen aus Lektionen mit höchster Fehlerquote, sonst zufällig.
     var uebungen = [];
-    var lektionen = APP_DATA.lessons.slice();
+    var lektionen = APP_DATA.sichtbareLessons().slice();
+    if (APP_DATA.paketModus() === 'einzeln') {
+      lektionen = lektionen.filter(function (l) { return APP_DATA.istBasis(l); });
+    }
     lektionen.sort(function (a, b) {
       return fehlerquote(b.id) - fehlerquote(a.id);
     });

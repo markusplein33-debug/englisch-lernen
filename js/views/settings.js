@@ -48,13 +48,36 @@
         opt('auswahl', '☑️ Nur bestimmte Themen …', themenModus) +
       '</select></div>' +
       '<div id="themen-liste" class="statcard' + (themenModus === 'auswahl' ? '' : ' gone') + '">' +
-      APP_DATA.decks.map(function (d) {
+      APP_DATA.sichtbareDecks().map(function (d) {
         var checked = Array.isArray(p.themen) && p.themen.indexOf(d.id) >= 0;
         return '<label style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:15px">' +
           '<input type="checkbox" class="themacheck" value="' + d.id + '"' +
           (checked ? ' checked' : '') + ' style="width:20px;height:20px">' +
           d.emoji + ' ' + d.titel + '</label>';
       }).join('') + '</div>' +
+
+      '<h2 class="sect">🧩 Erweiterungen</h2>' +
+      '<div class="statcard"><p class="note">Alle Erweiterungen stecken schon in der App (auch offline). ' +
+      'Schalte frei, was du lernen möchtest:</p>' +
+      APP_DATA.PAKETE.map(function (pk) {
+        var an = (s.pakete.aktiv || []).indexOf(pk.id) >= 0;
+        var decks = APP_DATA.decks.filter(function (d) { return d.paket === pk.id; });
+        var lekt = APP_DATA.lessons.filter(function (l) { return l.paket === pk.id; });
+        var umfang = decks.length
+          ? decks.reduce(function (n, d) { return n + d.karten.length; }, 0) + ' Karten'
+          : lekt.length + ' Lektionen';
+        return '<label style="display:flex;align-items:center;gap:12px;padding:10px 0;' +
+          'border-top:1px solid var(--line)">' +
+          '<input type="checkbox" class="paketcheck" value="' + pk.id + '"' +
+          (an ? ' checked' : '') + ' style="width:22px;height:22px;flex-shrink:0">' +
+          '<span style="flex:1"><b>' + pk.emoji + ' ' + pk.titel + '</b><br>' +
+          '<small style="color:var(--muted)">' + pk.beschreibung + ' · ' + umfang + '</small></span></label>';
+      }).join('') + '</div>' +
+      '<div class="field"><label>Wie sollen Erweiterungen gelernt werden?</label>' +
+      '<select id="paketmodus">' +
+        opt('ergaenzen', 'Ergänzen das vorhandene Paket (überall mitgemischt)', s.pakete.modus) +
+        opt('einzeln', 'Einzeln lernen (eigene Decks, Lern-Einheiten bleiben beim Basis-Paket)', s.pakete.modus) +
+      '</select></div>' +
 
       '<h2 class="sect">Aussprache</h2>' +
       '<div class="field"><label>Sprechtempo</label>' +
@@ -111,7 +134,25 @@
     bind('antwortmodus', function (v) { s.einstellungen.antwortmodus = v; });
     function leseThemenAuswahl() {
       var ids = [];
-      el.querySelectorAll('.themacheck').forEach(function (c) {
+      el.querySelectorAll('.paketcheck').forEach(function (c) {
+      c.addEventListener('change', function () {
+        var aktiv = [];
+        el.querySelectorAll('.paketcheck').forEach(function (x) {
+          if (x.checked) aktiv.push(x.value);
+        });
+        s.pakete.aktiv = aktiv;
+        // Themen-Auswahl bereinigen, falls ein abgewähltes Paket dort angehakt war
+        if (Array.isArray(p.themen)) {
+          var sichtbar = APP_DATA.sichtbareDecks().map(function (d) { return d.id; });
+          p.themen = p.themen.filter(function (id) { return sichtbar.indexOf(id) >= 0; });
+          if (!p.themen.length) p.themen = 'zufall';
+        }
+        Store.save();
+        Router.render();   // Ansicht neu aufbauen (Themenliste, Umfänge)
+      });
+    });
+    bind('paketmodus', function (v) { s.pakete.modus = v; });
+    el.querySelectorAll('.themacheck').forEach(function (c) {
         if (c.checked) ids.push(c.value);
       });
       return ids.length ? ids : 'zufall';

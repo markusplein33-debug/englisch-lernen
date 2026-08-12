@@ -25,7 +25,7 @@
     // Vokabel-Fortschritt pro Deck
     html += '<h2 class="sect">Vokabeln (Karteikarten-Boxen)</h2>';
     var gesamtGelernt = 0, gesamtKarten = 0;
-    APP_DATA.decks.forEach(function (d) {
+    APP_DATA.sichtbareDecks().forEach(function (d) {
       var v = SRS.verteilung(d.id);
       var gesamt = d.karten.length;
       gesamtKarten += gesamt;
@@ -49,7 +49,7 @@
 
     // Grammatik
     html += '<h2 class="sect">Grammatik-Lektionen</h2>';
-    var sortiert = APP_DATA.lessons.slice().sort(function (a, b) {
+    var sortiert = APP_DATA.sichtbareLessons().slice().sort(function (a, b) {
       return Pensum.fehlerquote(b.id) - Pensum.fehlerquote(a.id);
     });
     sortiert.forEach(function (l) {

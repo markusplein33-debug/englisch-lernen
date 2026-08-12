@@ -1,6 +1,6 @@
 // Service Worker: Precache aller App-Dateien, cache-first, offline-fähig.
 // Bei jeder Änderung an der App die VERSION erhöhen!
-var VERSION = 3;
+var VERSION = 4;
 var CACHE = 'notizen-en-v' + VERSION;
 
 var ASSETS = [
@@ -35,6 +35,11 @@ var ASSETS = [
   'js/data/deck-basis.js',
   'js/data/quiz-reise.js',
   'js/data/grammar-lessons.js',
+  'js/data/paket-alltag.js',
+  'js/data/paket-arbeit.js',
+  'js/data/paket-essen.js',
+  'js/data/paket-technik.js',
+  'js/data/paket-grammatik2.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/apple-touch-icon.png'

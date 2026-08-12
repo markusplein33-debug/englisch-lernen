@@ -4,8 +4,12 @@
   function liste(el) {
     Router.setTitle('Grammatik & Zeitformen');
     var s = Store.load();
+    var alle = APP_DATA.sichtbareLessons();
+    var basis = alle.filter(function (l) { return APP_DATA.istBasis(l); });
+    var erweiterungen = alle.filter(function (l) { return !APP_DATA.istBasis(l); });
+    var getrennt = APP_DATA.paketModus() === 'einzeln' && erweiterungen.length > 0;
     var html = '<div class="list">';
-    APP_DATA.lessons.forEach(function (l) {
+    function zeile(l) {
       var g = s.grammatik[l.id] || { geloest: {} };
       var geloest = Object.keys(g.geloest || {}).length;
       var quote = Pensum.fehlerquote(l.id);
@@ -18,8 +22,14 @@
         '<div class="progressbar"><i style="width:' + Math.round(100 * geloest / l.uebungen.length) +
         '%;background:' + (schwer ? 'var(--bad)' : 'var(--ok)') + '"></i></div>' +
         '</div><span class="chev">›</span></div>';
-    });
+    }
+    (getrennt ? basis : alle).forEach(zeile);
     html += '</div>';
+    if (getrennt) {
+      html += '<h2 class="sect">🧩 Erweiterungen</h2><div class="list">';
+      erweiterungen.forEach(zeile);
+      html += '</div>';
+    }
     el.innerHTML = html;
     el.querySelectorAll('[data-lektion]').forEach(function (r) {
       r.addEventListener('click', function () {
