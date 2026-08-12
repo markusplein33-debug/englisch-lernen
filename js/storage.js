@@ -10,6 +10,7 @@ window.Store = (function () {
       quiz: {},         // themaId -> { gespielt: n, beste: n, letzte: n, fragenFalsch: {frageId: n} }
       grammatik: {},    // lektionId -> { geloest: {uebungId: true}, fehler: {uebungId: n}, fertig: bool }
       streak: {},       // 'YYYY-MM-DD' -> Anzahl erledigter Einheiten
+      letzteLektion: 0, // Timestamp der zuletzt abgeschlossenen Lern-Einheit
       pensum: {
         intervallMin: 120,   // 0 = aus
         vokabeln: 10,

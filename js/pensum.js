@@ -107,6 +107,9 @@ window.Pensum = (function () {
   function einheitErledigt() {
     var s = Store.load();
     s.pensum.letzteEinheit = Date.now();
+    s.letzteLektion = Date.now(); // echter „zuletzt gelernt"-Stempel für die Startseite
+    // (letzteEinheit dient nur der Fälligkeits-Rechnung und wird auch beim
+    //  Einstellen des Intervalls gesetzt – darum ein eigener Stempel.)
     var tag = Store.heute();
     s.streak[tag] = (s.streak[tag] || 0) + 1;
     Store.save();

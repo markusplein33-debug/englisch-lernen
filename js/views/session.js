@@ -14,6 +14,9 @@
       Pensum.einheitErledigt();
       var uebrig = Pensum.faelligeEinheiten();
       var pStr = (Math.round(punkte * 10) / 10).toString().replace('.', ',');
+      // Erinnerung „zur nächsten Stunde": eine Stunde nach dem Ende dieser Einheit.
+      var naechste = new Date(Date.now() + 60 * 60 * 1000);
+      var naechsteHm = Ics.pad(naechste.getHours()) + ':' + Ics.pad(naechste.getMinutes());
       el.innerHTML = '<div class="center statcard"><div class="result-big">🎉</div>' +
         '<h2>Einheit geschafft!</h2>' +
         '<p>' + pStr + ' von ' + schritte.length + ' Punkten' +
@@ -22,10 +25,30 @@
           ? '<p class="note">Noch ' + uebrig + ' Einheit' + (uebrig === 1 ? '' : 'en') + ' fällig.</p>' +
             '<button class="btn big" id="more">Nächste Einheit →</button>'
           : '<p class="note">Pensum erfüllt – stark! 💪</p>') +
-        '<button class="btn ghost big" id="home">Zum Start</button></div>';
+        '<button class="btn ghost big" id="home">Zum Start</button></div>' +
+        '<div class="statcard" id="remind-card"><p class="note">⏰ Soll ich dich <b>zur nächsten Stunde</b> ' +
+        '(' + naechsteHm + ' Uhr) ans Weiterlernen erinnern?</p>' +
+        '<button class="btn" id="remind">📅 Ja, Erinnerung in den Kalender</button>' +
+        '<p class="note" id="remind-status" style="margin-top:8px"></p></div>';
       var more = el.querySelector('#more');
       if (more) more.addEventListener('click', function () { Router.render(); });
       el.querySelector('#home').addEventListener('click', function () { location.hash = '#/'; });
+      el.querySelector('#remind').addEventListener('click', function () {
+        var appUrl = location.origin + location.pathname;
+        var termin = {
+          uid: 'englisch-lernen-einmal-' + Ics.datumStempel(naechste) +
+            naechsteHm.replace(':', '') + '@markusplein33-debug.github.io',
+          datum: Ics.datumStempel(naechste),
+          zeit: naechsteHm.replace(':', ''),
+          titel: '📚 Englisch lernen – nächste Einheit',
+          beschreibung: 'Lern-Einheit starten: ' + appUrl,
+          url: appUrl
+        };
+        Ics.lade(Ics.erzeuge([termin], false), 'englisch-erinnerung.ics');
+        el.querySelector('#remind-status').innerHTML =
+          '✅ Datei erstellt – öffnen und <b>„Zum Kalender hinzufügen“</b> bestätigen. ' +
+          'Der Termin gilt nur einmalig um ' + naechsteHm + ' Uhr.';
+      });
     }
 
     function zeige() {

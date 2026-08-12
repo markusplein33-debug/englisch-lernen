@@ -193,31 +193,52 @@ await page.evaluate(() => { const s = Store.load(); s.pakete.aktiv = []; s.paket
 // Home: Stand-Fußzeile + Refresh-Button
 await page.click('#tabbar .tab:nth-child(1)');
 await page.waitForSelector('#refresh', { timeout: 5000 });
-ok((await page.locator('#view .note').first().textContent()).includes('Letzte Aktualisierung'), 'Home: Stand-Anzeige da');
+ok((await page.locator('#view').textContent()).includes('Letzte Aktualisierung'), 'Home: Stand-Anzeige da');
 ok(await page.locator('#refresh').count() === 1, 'Home: Refresh-Button da');
+// Letzte Lern-Einheit: erst Platzhalter bzw. Zeitstempel nach Session
+ok((await page.locator('#view').textContent()).includes('Lern-Einheit'), 'Home: Letzte-Einheit-Zeile da');
+await page.evaluate(() => { const s = Store.load(); s.letzteLektion = Date.now(); Store.save(); });
+await page.click('#tabbar .tab:nth-child(2)');
+await page.click('#tabbar .tab:nth-child(1)');
+await page.waitForSelector('#refresh', { timeout: 5000 });
+ok((await page.locator('#view').textContent()).includes('Letzte Lern-Einheit: heute'), 'Home: Letzte Einheit heute angezeigt');
 
 // Einstellungen: Erinnerungs-Assistent
 await page.click('#btn-settings');
 await page.waitForSelector('#ics-btn', { timeout: 5000 });
 ok(await page.locator('#ics-btn').count() === 1, 'Settings: Kalender-Button da');
 ok(await page.locator('#shortcut-btn').count() === 1, 'Settings: Kurzbefehl-Button da');
-ok(((await page.locator('#zeiten-vorschau').textContent()) || '').includes(':00'), 'Settings: Zeiten-Vorschau berechnet');
+ok(((await page.locator('#zeiten-vorschau2').textContent()) || '').includes(':00'), 'Settings: Zeiten-Vorschau berechnet');
+// Ics-Helfer: Einzeltermin ohne Wiederholung
+const einzel = await page.evaluate(() => Ics.erzeuge([{uid:'t@x',datum:'20260812',zeit:'1400',titel:'T',beschreibung:'B',url:'u'}], false));
+ok(einzel.includes('DTSTART:20260812T140000') && !einzel.includes('RRULE'), 'Ics: Einzeltermin ohne RRULE');
 ok(await page.locator('#ics-del-btn').count() === 1, 'Settings: Entfernen-Button da');
 // Ohne vorheriges Anlegen: Hinweis statt Datei
 await page.click('#ics-del-btn');
 ok((await page.locator('#ics-status').textContent()).includes('noch keine'), 'Entfernen ohne Anlegen: Hinweis');
 // Anlegen merkt sich Termine, Entfernen erzeugt Storno-Datei (Download abfangen)
-const dl1 = page.waitForEvent('download');
-await page.click('#ics-btn');
-await dl1;
-ok(await page.evaluate(() => !!Store.load().pensum.kalender), 'Kalender-Anlage gemerkt');
-const dl2p = page.waitForEvent('download');
-await page.click('#ics-del-btn');
-const dl2 = await dl2p;
-const cancelPath = await dl2.path();
-const cancelIcs = fs.readFileSync(cancelPath, 'utf8');
-ok(cancelIcs.includes('METHOD:CANCEL') && cancelIcs.includes('STATUS:CANCELLED') &&
-   cancelIcs.includes('englisch-lernen-slot-0@'), 'Storno-ICS korrekt (CANCEL + UIDs)');
+const stunde = await page.evaluate(() => new Date().getHours());
+if (stunde < 19) {
+  const dl1p = page.waitForEvent('download');
+  await page.click('#ics-btn');
+  const dl1 = await dl1p;
+  const createIcs = fs.readFileSync(await dl1.path(), 'utf8');
+  const heuteStempel = await page.evaluate(() => Ics.datumStempel(new Date()));
+  ok(createIcs.includes('DTSTART:' + heuteStempel) && !createIcs.includes('RRULE'),
+     'Erinnerungs-ICS: nur heute, keine Wiederholung');
+  ok(await page.evaluate(() => !!Store.load().pensum.kalender), 'Kalender-Anlage gemerkt');
+  const dl2p = page.waitForEvent('download');
+  await page.click('#ics-del-btn');
+  const dl2 = await dl2p;
+  const cancelIcs = fs.readFileSync(await dl2.path(), 'utf8');
+  ok(cancelIcs.includes('METHOD:CANCEL') && cancelIcs.includes('STATUS:CANCELLED') &&
+     cancelIcs.includes('englisch-lernen-slot-0@') && !cancelIcs.includes('RRULE'),
+     'Storno-ICS korrekt (CANCEL + UIDs, keine Wiederholung)');
+} else {
+  await page.click('#ics-btn');
+  ok((await page.locator('#ics-status').textContent()).includes('vorbei'),
+     'Kalender-Button: Hinweis wenn heute keine Zeiten mehr');
+}
 
 // Statistik zeigt Balken
 await page.click('#tabbar .tab:nth-child(5)');

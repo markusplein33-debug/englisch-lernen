@@ -1,4 +1,17 @@
 // Startbildschirm: Pensum-Banner + Kacheln + Tagesübersicht.
+function letzteLektionText(ts) {
+  if (!ts) return 'Noch keine Lern-Einheit gemacht – leg gleich los!';
+  var d = new Date(ts), jetzt = new Date();
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var hm = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' Uhr';
+  var gestern = new Date(jetzt.getTime() - 24 * 3600 * 1000);
+  var tag;
+  if (d.toDateString() === jetzt.toDateString()) tag = 'heute';
+  else if (d.toDateString() === gestern.toDateString()) tag = 'gestern';
+  else tag = 'am ' + pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear();
+  return 'Letzte Lern-Einheit: ' + tag + ' um ' + hm;
+}
+
 Views.home = function (el) {
   Router.setTitle('Englisch lernen');
   var s = Store.load();
@@ -24,6 +37,8 @@ Views.home = function (el) {
       '<p>Stelle unter ⚙️ Einstellungen dein Lernpensum ein – z. B. alle 2 Stunden 10 Vokabeln.</p>' +
       '<button class="btn light" id="start-session">Gemischte Einheit starten →</button></div>';
   }
+
+  html += '<div class="center"><p class="note">🕐 ' + letzteLektionText(s.letzteLektion) + '</p></div>';
 
   html += '<div class="tile-grid">' +
     '<div class="tile" data-go="#/karten"><span class="big">🃏</span>Karteikarten' +
